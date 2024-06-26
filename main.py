@@ -1,4 +1,5 @@
 import pygame
+import random
 
 pygame.init()
 
@@ -39,7 +40,7 @@ green_locations = [(4,0), (5,0), (6,0), (7,0),
                  (4,6), (5,6), (6,6), (7,6),
                  (4,7), (5,7), (6,7), (7,7)]
 green_apples_locations = green_locations[:-2]
-green_knigh_location = (7,7)
+green_knight_location = (7,7)
 extra_green_apple = {}
 
 captured_pieces_red = []
@@ -48,7 +49,11 @@ captured_pieces_green = []
 # 0 - red turn no selection; 1 - red turn piece selected; 2 - green turn no selection; 3 - green turn piece selected
 turn_step = 0
 selection = 100
-valid_moves = []    
+valid_moves = [] 
+
+# Dictionaries to store apple values
+red_apple_values = {}
+green_apple_values = {}
 
 ##########################################################################
 # GAME IMAGES
@@ -97,6 +102,14 @@ powerups_list = ['golden apple', 'poisoned apple']
 
 # check variables / flashing the counter
 
+def add_apple_values():
+    """
+    Assigns random values from 1 to 9 to each red and green apple.
+    """
+    global red_apple_values, green_apple_values
+    red_apple_values = {loc: random.randint(1, 9) for loc in red_apples_locations}
+    green_apple_values = {loc: random.randint(1, 9) for loc in green_apples_locations}
+
 
 def draw_board():
     """
@@ -137,6 +150,8 @@ def draw_pieces():
             screen.blit(red_images[index], (x * 100 + 10, y * 100 + 10))
         else:
             screen.blit(red_images[index], (x * 100 + 22, y * 100 + 30))
+            value = red_apple_values.get((x, y), 0)
+            screen.blit(font.render(str(value), True, 'white'), (x * 100 + 40, y * 100 + 40))
         if turn_step < 2 and selection == i and red_pieces[i] == 'knight':
             pygame.draw.rect(screen, 'yellow', [red_locations[i][0] * 100 + 1, red_locations[i][1] * 100 + 1, 
                              100, 100], 2)
@@ -148,6 +163,8 @@ def draw_pieces():
             screen.blit(green_images[index], (x * 100 + 10, y * 100 + 10))
         else:
             screen.blit(green_images[index], (x * 100 + 22, y * 100 + 30))
+            value = green_apple_values.get((x, y), 0)
+            screen.blit(font.render(str(value), True, 'white'), (x * 100 + 40, y * 100 + 40))
         if turn_step >= 2 and selection == i and green_pieces[i] == 'knight':
             pygame.draw.rect(screen, 'green', [green_locations[i][0] * 100 + 1, green_locations[i][1] * 100 + 1, 
                              100, 100], 5)
@@ -211,7 +228,7 @@ def check_options(pieces, locations, turn):
     
     Returns:
     all_moves_list (list): A list containing lists of valid move positions for each piece.
-"""
+    """
     moves_list = []
     all_moves_list = []
     for i in range(len(pieces)):
@@ -239,15 +256,37 @@ def draw_valid(moves):
     for i in range(len(moves)):
         pygame.draw.circle(screen, color, (moves[i][0] * 100 + 50, moves[i][1] * 100 + 50), 5)
     
+# draw captured values on the side
+def draw_captured_values():
+    """
+    Calculates and displays the total values of captured apples for the current player on the right side of the screen.
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
+
+    red_score = sum(captured_pieces_red)        
+    green_score = sum(captured_pieces_green)
     
+    score_text = f"Scores:\nred = {red_score}\ngreen = {green_score}"
+    
+    lines = score_text.split('\n')
+    y_offset = 20
+    for line in lines:
+        screen.blit(font.render(line, True, 'black'), (820, y_offset))
+        y_offset += 60
+
+
 ##########################################################################
 # MAIN LOOP
 ##########################################################################
+add_apple_values()  # Call this function to initialize apple values
+
 green_options = check_options(green_pieces, green_locations, 'green')
 red_options = check_options(red_pieces, red_locations, 'red')
-print(f"red options: {red_options}")
-print(f"green options: {green_options}")
-
 
 run = True
 while run:
@@ -255,6 +294,7 @@ while run:
     screen.fill('light gray')
     draw_board()
     draw_pieces()
+    draw_captured_values()
 
     if selection != 100:
         valid_moves = check_valid_moves()
@@ -270,7 +310,6 @@ while run:
             y_coord = event.pos[1] // 100
             click_coords = (x_coord, y_coord)
             
-            
             if turn_step <= 1: # red to move              
                 if click_coords in red_locations:
                     selection = red_locations.index(click_coords)
@@ -284,7 +323,6 @@ while run:
                     print(f'red_locations[selection]: {red_locations[selection]}')
                     
                     if len(extra_red_apple) != 0:
-                        print("extra red apple executed")
                         index = list(extra_red_apple.keys())[0]
                         red_pieces.insert(index, 'apple')
                         red_locations.insert(index, extra_red_apple[index])
@@ -292,7 +330,7 @@ while run:
                         
                     if click_coords in green_locations:
                         green_piece = green_locations.index(click_coords)
-                        captured_pieces_red.append(green_pieces[green_piece])
+                        captured_pieces_red.append(green_apple_values[click_coords])
                         print(f"green pieces[green piece]: {green_pieces[green_piece]}")
                         green_pieces.pop(green_piece)
                         print(f"green locations[green piece]: {green_locations[green_piece]}")
@@ -301,14 +339,11 @@ while run:
                     elif click_coords in red_locations:
                         red_piece = red_locations.index(click_coords)
                         extra_red_apple = {red_piece: click_coords}
-                        print(f"red piece: {red_piece}")
                         red_pieces.pop(red_piece)
                         red_locations.pop(red_piece)
                     
                     red_locations[0] = click_coords
                     red_pieces[0] = 'knight'
-                    print(f'red pieces: {red_pieces}')
-                    print(f'red locations: {red_locations}')
                     
                     green_options = check_options(green_pieces, green_locations, 'green')
                     red_options = check_options(red_pieces, red_locations, 'red')
@@ -337,7 +372,7 @@ while run:
                     
                     if click_coords in red_locations:
                         red_piece = red_locations.index(click_coords)
-                        captured_pieces_green.append(red_pieces[red_piece])
+                        captured_pieces_green.append(red_apple_values[click_coords])
                         red_pieces.pop(red_piece)
                         red_locations.pop(red_piece)                      
                         
