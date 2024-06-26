@@ -3,18 +3,25 @@ import random
 
 pygame.init()
 
+
+##########################################################################
+# SCREEN DISPLAY
+##########################################################################
+# Set screen dimensions and create a display surface
 WIDTH = 1000
 HEIGHT = 900
+FPS = 60
 screen = pygame.display.set_mode([WIDTH, HEIGHT])
 pygame.display.set_caption("Knight Sweeper")
 font = pygame.font.Font('freesansbold.ttf', 20)
 big_font = pygame.font.Font('freesansbold.ttf', 50)
 timer = pygame.time.Clock()
-fps = 60
+
 
 ##########################################################################
 # GAME VARIABLES
 ##########################################################################
+# Define the red pieces and their initial locations
 red_pieces = ['knight'] + ['apple'] * 31
 red_locations = [(0,0), (1,0), (2,0), (3,0),
                  (0,1), (1,1), (2,1), (3,1),
@@ -25,9 +32,9 @@ red_locations = [(0,0), (1,0), (2,0), (3,0),
                  (0,6), (1,6), (2,6), (3,6),
                  (0,7), (1,7), (2,7), (3,7)]
 red_apples_locations = red_locations[1:]
-red_knight_location = (0,0)
 extra_red_apple = {}
 
+# Define the green pieces and their initial locations
 green_pieces = ['apple'] * 31
 green_pieces = green_pieces + ['knight']
 green_locations = [(4,0), (5,0), (6,0), (7,0),
@@ -39,18 +46,20 @@ green_locations = [(4,0), (5,0), (6,0), (7,0),
                  (4,6), (5,6), (6,6), (7,6),
                  (4,7), (5,7), (6,7), (7,7)]
 green_apples_locations = green_locations[:-2]
-green_knight_location = (7,7)
 extra_green_apple = {}
 
+# Lists to keep track of captured pieces for each player
 captured_pieces_red = []
 captured_pieces_green = []
 
+# Turn and game state variables
 # 0 - red turn no selection; 1 - red turn piece selected; 2 - green turn no selection; 3 - green turn piece selected
 turn_step = 0
 turn_step_putting_poison = 0
 selection = 100
 valid_moves = [] 
 is_putting_poison_done = False
+can_add_values = False
 
 # Dictionaries to store apple values
 red_apple_values = {}
@@ -59,6 +68,10 @@ green_apple_values = {}
 # Variables to store poison apple locations
 red_poison_locations = []
 green_poison_locations = []
+
+# Variables to store golden apple locations
+red_golden_locations = []
+green_golden_locations = []
 
 
 ##########################################################################
@@ -98,27 +111,99 @@ gold_apple = pygame.image.load('assets/gold_apple.png')
 gold_apple = pygame.transform.scale(gold_apple, apple_scale)
 gold_apple_small = pygame.transform.scale(gold_apple, apple_scale_small)
 
-red_images = [red_knight, red_apple, red_poisoned_apple]
-red_images_small = [red_knight_small, red_apple_small]
-
-green_images = [green_knight, green_apple, green_poisoned_apple]
-green_images_small = [green_knight_small, green_apple_small]
+red_images = [red_knight, red_apple, red_poisoned_apple, gold_apple]
+green_images = [green_knight, green_apple, green_poisoned_apple, gold_apple]
 
 powerups = [gold_apple, red_poisoned_apple]
 powerups_small = [gold_apple_small, poisoned_apple_small]
 
-piece_list = ['knight', 'apple', 'poison']
-powerups_list = ['gold', 'poison']
+piece_list = ['knight', 'apple', 'poison', 'golden']
+powerups_list = ['golden', 'poison']
 
 # check variables / flashing the counter
 
 def add_apple_values():
     """
-    Assigns random values from 1 to 9 to each red and green apple.
+    Assigns random values to apples for both red and green teams.
+    Values are assigned randomly between 2 and 9, with the exception
+    that a value of 1 is assigned if an adjacent square contains an apple.
+
+    Parameters:
+    Non
+
+    Returns:
+    None
     """
-    global red_apple_values, green_apple_values
-    red_apple_values = {loc: random.randint(1, 9) for loc in red_apples_locations}
-    green_apple_values = {loc: random.randint(1, 9) for loc in green_apples_locations}
+    global red_apple_values, green_apple_values, red_golden_locations, green_golden_locations, green_locations, red_locations
+    golden_apples_locations = red_golden_locations + green_golden_locations
+    print(f"Golden apples location: {golden_apples_locations}")
+
+    def is_valid_position(pos, poisoned_locations, player):
+        x, y = pos
+        # Check if position is out of bounds (negative positions)
+        if x < 0 or y < 0 or x > 7 or y > 7:
+            return False
+        # Check if position is in poisoned locations, golden apples locations, or horse location
+        if player == 'red':
+            if pos in poisoned_locations or pos in red_golden_locations or pos == (0,0) or pos in green_locations:
+                return False
+        else:
+            if pos in poisoned_locations or pos in green_golden_locations or pos == (7,7) or pos in red_locations:
+                return False   
+            
+        return True
+    
+    def possible_adjacent_locations(poisoned_locations, player):
+        adjacent_cells = []
+        for loc in poisoned_locations:
+            x, y = loc
+            adjacent_positions = [(x+1, y), (x-1, y), (x, y+1), (x, y-1), (x+1, y+1), (x-1, y-1), (x+1, y-1), (x-1, y+1)]
+            adj_cells_for_loc = []
+            for pos in adjacent_positions:
+                if is_valid_position(pos, poisoned_locations, player):
+                    adj_cells_for_loc.append(pos)
+            adj_cells_for_loc.sort(key=lambda cell: len([c for c in adjacent_positions if is_valid_position(c, poisoned_locations, player)]))
+            adjacent_cells.append(adj_cells_for_loc)
+        
+        for cell in adjacent_cells[0]:
+            if cell in adjacent_cells[1]:
+                adjacent_cells[1].remove(cell)
+                
+        return adjacent_cells
+        
+    # Get adjacent cells for red poisoned apples
+    red_poisoned_adjacent_cells = possible_adjacent_locations(red_poison_locations, 'red')
+    print(f'red poisoned adjacent cells: {red_poisoned_adjacent_cells}')
+    # Get adjacent cells for green poisoned apples
+    green_poisoned_adjacent_cells = possible_adjacent_locations(green_poison_locations, 'green')
+    print(f'green poisoned adjacent cells: {green_poisoned_adjacent_cells}')
+    
+    
+    # Assign random values to red apples
+    for possible_adj_cell in red_poisoned_adjacent_cells:
+        for cell in possible_adj_cell:
+            if cell not in red_apple_values:
+                red_apple_values[cell] = 1
+            if len(red_apple_values) == 2 or len(red_apple_values) == 4:
+                break
+            
+    for possible_adj_cell in green_poisoned_adjacent_cells:
+        for cell in possible_adj_cell:
+            if cell not in green_apple_values:
+                green_apple_values[cell] = 1
+            if len(green_apple_values) == 2 or len(green_apple_values) == 4:
+                break
+    
+    if len(red_apple_values) < 4: 
+        for i in range(4-len(red_apple_values)):
+            red_apple_values.update({loc: 1 for loc in red_apples_locations if loc not in red_apple_values})
+            
+    if len(green_apple_values) < 4: 
+        for i in range(4-len(green_apple_values)):
+            green_apple_values.update({loc: 1 for loc in green_apples_locations if loc not in green_apple_values})
+
+    red_apple_values.update({loc: random.randint(2, 9) for loc in red_apples_locations if loc not in red_apple_values})
+    green_apple_values.update({loc: random.randint(2, 9) for loc in green_apples_locations if loc not in green_apple_values})
 
 
 def draw_board():
@@ -146,7 +231,6 @@ def draw_board():
         for i in range(9):
             pygame.draw.line(screen, 'black', (0, 100 * i), (800, 100 * i), 2)
             pygame.draw.line(screen, 'black', (100 * i, 0), (100 * i, 800), 2)
-
 
 def draw_pieces():
     """
@@ -183,6 +267,72 @@ def draw_pieces():
         if turn_step >= 2 and selection == i and green_pieces[i] == 'knight':
             pygame.draw.rect(screen, 'green', [green_locations[i][0] * 100 + 1, green_locations[i][1] * 100 + 1, 
                              100, 100], 5)
+
+def draw_golden_apples():
+    """
+    Randomly selects two locations for golden apples from red and green locations, excluding the knights' initial positions, 
+    and updates the respective pieces lists to include golden apples.
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
+    global red_golden_locations, green_golden_locations
+
+    # Randomly choose two locations from red_locations excluding (0,0)
+    red_golden_locations = random.sample([loc for loc in red_locations if loc != (0,0)], 2)
+
+    # Randomly choose two locations from green_locations excluding (7,7)
+    green_golden_locations = random.sample([loc for loc in green_locations if loc != (7,7)], 2)
+    
+    for i in range(2):
+        red_golden_index = red_locations.index(red_golden_locations[i])
+        red_pieces[red_golden_index] = 'golden'
+        
+        green_golden_index = green_locations.index(green_golden_locations[i])
+        green_pieces[green_golden_index] = 'golden'
+
+        
+
+def draw_poisoned_apples():
+    """
+    Allows players to place poisoned apples on the board during the initial setup phase.
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
+    global is_putting_poison_done, turn_step_putting_poison, can_add_values
+    
+    if not is_putting_poison_done:
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                x_coord = event.pos[0] // 100
+                y_coord = event.pos[1] // 100
+                click_coords = (x_coord, y_coord)
+            
+                # red to put poison
+                if turn_step_putting_poison == 0 and click_coords in red_locations and click_coords != (0, 0) and click_coords not in red_golden_locations:
+                    red_poison_locations.append(click_coords)
+                    red_piece_index = red_locations.index(click_coords)
+                    red_pieces[red_piece_index] = 'poison'
+                    
+                    if len(red_poison_locations) == 2:
+                        turn_step_putting_poison = 1
+                        
+                elif turn_step_putting_poison == 1 and click_coords in green_locations and click_coords != (7, 7) and click_coords not in green_golden_locations:
+                    green_poison_locations.append(click_coords)
+                    green_piece_index = green_locations.index(click_coords)
+                    green_pieces[green_piece_index] = 'poison'
+                    
+                    if len(green_poison_locations) == 2:
+                        is_putting_poison_done = True
+                        can_add_values = True
+
 
 # check valid knight moves
 def check_knight(position, color):
@@ -298,7 +448,7 @@ def draw_captured_values():
 ##########################################################################
 # MAIN LOOP
 ##########################################################################
-add_apple_values()  # Call this function to initialize apple values
+draw_golden_apples()
 
 green_options = check_options(green_pieces, green_locations, 'green')
 red_options = check_options(red_pieces, red_locations, 'red')
@@ -306,44 +456,21 @@ red_options = check_options(red_pieces, red_locations, 'red')
 
 run = True
 while run:
-    timer.tick(fps)
+    timer.tick(FPS)
     screen.fill('light gray')
     draw_board()
     draw_pieces()
     draw_captured_values()
-
+    draw_poisoned_apples()
+    
+    if can_add_values:
+        add_apple_values() 
+        can_add_values = False
+        
     if selection != 100:
         valid_moves = check_valid_moves()
         draw_valid(valid_moves)
         
-    if not is_putting_poison_done:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                x_coord = event.pos[0] // 100
-                y_coord = event.pos[1] // 100
-                click_coords = (x_coord, y_coord)
-            
-                # red to put poison
-                if turn_step_putting_poison == 0 and click_coords in red_locations and click_coords != (0, 0):
-                    red_poison_locations.append(click_coords)
-                    red_piece_index = red_locations.index(click_coords)
-                    red_pieces[red_piece_index] = 'poison'
-                    
-                    if len(red_poison_locations) == 2:
-                        turn_step_putting_poison = 1
-                        
-                elif turn_step_putting_poison == 1 and click_coords in green_locations and click_coords != (7, 7):
-                    green_poison_locations.append(click_coords)
-                    green_piece_index = green_locations.index(click_coords)
-                    green_pieces[green_piece_index] = 'poison'
-                    
-                    if len(green_poison_locations) == 2:
-                        is_putting_poison_done = True
-                    
-            
-                        
     # event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
