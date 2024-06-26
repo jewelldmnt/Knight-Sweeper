@@ -154,6 +154,16 @@ def draw_pieces():
 
 # check valid knight moves
 def check_knight(position, color):
+    """
+    Checks for valid knight moves from a given position.
+
+    Parameters:
+    position (tuple): The current position of the knight.
+    color (str): The color of the knight, either 'red' or 'green'.
+    
+    Returns:
+    moves_list (list): A list of valid move positions for the knight.
+    """
     moves_list = []
     if color == 'red':
         enemies_list = green_locations
@@ -173,6 +183,15 @@ def check_knight(position, color):
 
 # check for valid moves for just selected piece
 def check_valid_moves():
+    """
+    Checks for valid moves for the currently selected piece.
+
+    Parameters:
+    None
+    
+    Returns:
+    valid_options (list): A list of valid move positions for the selected piece.
+    """
     if turn_step < 2: 
         options_list = red_options
     else:
@@ -182,6 +201,17 @@ def check_valid_moves():
 
 
 def check_options(pieces, locations, turn):
+    """
+    Generates a list of valid moves for all pieces of a given color.
+
+    Parameters:
+    pieces (list): A list of pieces for the current player.
+    locations (list): A list of current positions for the pieces.
+    turn (str): The color of the current player, either 'red' or 'green'.
+    
+    Returns:
+    all_moves_list (list): A list containing lists of valid move positions for each piece.
+"""
     moves_list = []
     all_moves_list = []
     for i in range(len(pieces)):
@@ -196,6 +226,15 @@ def check_options(pieces, locations, turn):
 
 # draw valid moves
 def draw_valid(moves):
+    """
+    Draws the valid moves for the selected piece on the board.
+
+    Parameters:
+    moves (list): A list of valid move positions for the selected piece.
+    
+    Returns:
+    None
+    """
     color = 'blue'
     for i in range(len(moves)):
         pygame.draw.circle(screen, color, (moves[i][0] * 100 + 50, moves[i][1] * 100 + 50), 5)
@@ -245,8 +284,8 @@ while run:
                     print(f'red_locations[selection]: {red_locations[selection]}')
                     
                     if len(extra_red_apple) != 0:
+                        print("extra red apple executed")
                         index = list(extra_red_apple.keys())[0]
-                        print(f'index: {index}')
                         red_pieces.insert(index, 'apple')
                         red_locations.insert(index, extra_red_apple[index])
                         extra_red_apple = {}
@@ -254,18 +293,22 @@ while run:
                     if click_coords in green_locations:
                         green_piece = green_locations.index(click_coords)
                         captured_pieces_red.append(green_pieces[green_piece])
+                        print(f"green pieces[green piece]: {green_pieces[green_piece]}")
                         green_pieces.pop(green_piece)
+                        print(f"green locations[green piece]: {green_locations[green_piece]}")
                         green_locations.pop(green_piece)
 
-                    if click_coords in red_locations:
+                    elif click_coords in red_locations:
                         red_piece = red_locations.index(click_coords)
                         extra_red_apple = {red_piece: click_coords}
+                        print(f"red piece: {red_piece}")
                         red_pieces.pop(red_piece)
                         red_locations.pop(red_piece)
                     
                     red_locations[0] = click_coords
                     red_pieces[0] = 'knight'
                     print(f'red pieces: {red_pieces}')
+                    print(f'red locations: {red_locations}')
                     
                     green_options = check_options(green_pieces, green_locations, 'green')
                     red_options = check_options(red_pieces, red_locations, 'red')
@@ -298,7 +341,7 @@ while run:
                         red_pieces.pop(red_piece)
                         red_locations.pop(red_piece)                      
                         
-                    if click_coords in green_locations:
+                    elif click_coords in green_locations:
                         green_piece = green_locations.index(click_coords)
                         extra_green_apple = {green_piece: click_coords}
                         green_pieces.pop(green_piece)
