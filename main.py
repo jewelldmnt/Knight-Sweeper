@@ -49,8 +49,10 @@ green_apples_locations = green_locations[:-2]
 extra_green_apple = {}
 
 # Lists to keep track of captured pieces for each player
-captured_pieces_red = []
-captured_pieces_green = []
+red_captured_locations = []
+red_captured_pieces = []
+green_captured_locations = []
+green_captured_pieces = []
 
 # Turn and game state variables
 # 0 - red turn no selection; 1 - red turn piece selected; 2 - green turn no selection; 3 - green turn piece selected
@@ -60,6 +62,9 @@ selection = 100
 valid_moves = [] 
 is_putting_poison_done = False
 can_add_values = False
+winner = None
+is_game_over = False 
+round_counter = 1
 
 # Dictionaries to store apple values
 red_apple_values = {}
@@ -85,11 +90,9 @@ knight_scale_small = (60, 60)
 
 red_apple = pygame.image.load('assets/red_apple.png')
 red_apple = pygame.transform.scale(red_apple, apple_scale)
-red_apple_small = pygame.transform.scale(red_apple, apple_scale_small)
 
 red_knight = pygame.image.load('assets/red_knight.png')
 red_knight = pygame.transform.scale(red_knight, knight_scale)
-red_knight_small = pygame.transform.scale(red_knight, knight_scale_small)
 
 green_knight = pygame.image.load('assets/green_knight.png')
 green_knight = pygame.transform.scale(green_knight, knight_scale)
@@ -101,11 +104,9 @@ green_apple_small = pygame.transform.scale(green_apple, apple_scale_small)
 
 red_poisoned_apple = pygame.image.load('assets/red_poisoned_apple.png')
 red_poisoned_apple = pygame.transform.scale(red_poisoned_apple, apple_scale)
-poisoned_apple_small = pygame.transform.scale(red_poisoned_apple, apple_scale_small)
 
 green_poisoned_apple = pygame.image.load('assets/green_poisoned_apple.png')
 green_poisoned_apple = pygame.transform.scale(green_poisoned_apple, apple_scale)
-poisoned_apple_small = pygame.transform.scale(green_poisoned_apple, apple_scale_small)
 
 gold_apple = pygame.image.load('assets/gold_apple.png')
 gold_apple = pygame.transform.scale(gold_apple, apple_scale)
@@ -115,13 +116,11 @@ red_images = [red_knight, red_apple, red_poisoned_apple, gold_apple]
 green_images = [green_knight, green_apple, green_poisoned_apple, gold_apple]
 
 powerups = [gold_apple, red_poisoned_apple]
-powerups_small = [gold_apple_small, poisoned_apple_small]
 
 piece_list = ['knight', 'apple', 'poison', 'golden']
 powerups_list = ['golden', 'poison']
 
 # check variables / flashing the counter
-
 def add_apple_values():
     """
     Assigns random values to apples for both red and green teams.
@@ -169,7 +168,7 @@ def add_apple_values():
             if cell in adjacent_cells[1]:
                 adjacent_cells[1].remove(cell)
                 
-        return adjacent_cells
+        return list(set(adjacent_cells[0] + adjacent_cells[1]))
         
     # Get adjacent cells for red poisoned apples
     red_poisoned_adjacent_cells = possible_adjacent_locations(red_poison_locations, 'red')
@@ -178,22 +177,19 @@ def add_apple_values():
     green_poisoned_adjacent_cells = possible_adjacent_locations(green_poison_locations, 'green')
     print(f'green poisoned adjacent cells: {green_poisoned_adjacent_cells}')
     
-    
-    # Assign random values to red apples
-    for possible_adj_cell in red_poisoned_adjacent_cells:
-        for cell in possible_adj_cell:
-            if cell not in red_apple_values:
-                red_apple_values[cell] = 1
-            if len(red_apple_values) == 2 or len(red_apple_values) == 4:
-                break
+    for idx, cell in enumerate(red_poisoned_adjacent_cells):
+        if idx == 4:
+            break
+        if cell not in red_apple_values:
+            red_apple_values[cell] = 1
             
-    for possible_adj_cell in green_poisoned_adjacent_cells:
-        for cell in possible_adj_cell:
-            if cell not in green_apple_values:
-                green_apple_values[cell] = 1
-            if len(green_apple_values) == 2 or len(green_apple_values) == 4:
-                break
-    
+    for idx, cell in enumerate(green_poisoned_adjacent_cells):
+        if idx == 4:
+            break
+        if cell not in green_apple_values:
+            green_apple_values[cell] = 1
+
+
     if len(red_apple_values) < 4: 
         for i in range(4-len(red_apple_values)):
             red_apple_values.update({loc: 1 for loc in red_apples_locations if loc not in red_apple_values})
@@ -306,34 +302,33 @@ def draw_poisoned_apples():
     Returns:
     None
     """
-    global is_putting_poison_done, turn_step_putting_poison, can_add_values
+    global is_putting_poison_done, turn_step_putting_poison, can_add_values, green_golden_locations, red_golden_locations, green_poison_locations, red_poison_locations
     
-    if not is_putting_poison_done:
-        for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                x_coord = event.pos[0] // 100
-                y_coord = event.pos[1] // 100
-                click_coords = (x_coord, y_coord)
-            
-                # red to put poison
-                if turn_step_putting_poison == 0 and click_coords in red_locations and click_coords != (0, 0) and click_coords not in red_golden_locations:
-                    red_poison_locations.append(click_coords)
-                    red_piece_index = red_locations.index(click_coords)
-                    red_pieces[red_piece_index] = 'poison'
+    for event in pygame.event.get():
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            x_coord = event.pos[0] // 100
+            y_coord = event.pos[1] // 100
+            click_coords = (x_coord, y_coord)
+        
+            # red to put poison
+            if turn_step_putting_poison == 0 and click_coords in red_locations and click_coords != (0, 0) and click_coords not in red_golden_locations and click_coords not in red_poison_locations:
+                red_poison_locations.append(click_coords)
+                red_piece_index = red_locations.index(click_coords)
+                red_pieces[red_piece_index] = 'poison'
+                
+                if len(red_poison_locations) == 2:
+                    turn_step_putting_poison = 1
                     
-                    if len(red_poison_locations) == 2:
-                        turn_step_putting_poison = 1
-                        
-                elif turn_step_putting_poison == 1 and click_coords in green_locations and click_coords != (7, 7) and click_coords not in green_golden_locations:
-                    green_poison_locations.append(click_coords)
-                    green_piece_index = green_locations.index(click_coords)
-                    green_pieces[green_piece_index] = 'poison'
-                    
-                    if len(green_poison_locations) == 2:
-                        is_putting_poison_done = True
-                        can_add_values = True
+            elif turn_step_putting_poison == 1 and click_coords in green_locations and click_coords != (7, 7) and click_coords not in green_golden_locations and click_coords not in green_poison_locations:
+                green_poison_locations.append(click_coords)
+                green_piece_index = green_locations.index(click_coords)
+                green_pieces[green_piece_index] = 'poison'
+                
+                if len(green_poison_locations) == 2:
+                    is_putting_poison_done = True
+                    can_add_values = True
 
-
+ 
 # check valid knight moves
 def check_knight(position, color):
     """
@@ -433,10 +428,10 @@ def draw_captured_values():
     None
     """
 
-    red_score = sum(captured_pieces_red)        
-    green_score = sum(captured_pieces_green)
+    red_score = sum(red_captured_locations)        
+    green_score = sum(green_captured_locations)
     
-    score_text = f"Scores:\nred = {red_score}\ngreen = {green_score}"
+    score_text = f"Round: {round_counter} \nScores:\nred = {red_score}\ngreen = {green_score}"
     
     lines = score_text.split('\n')
     y_offset = 20
@@ -444,6 +439,33 @@ def draw_captured_values():
         screen.blit(font.render(line, True, 'black'), (820, y_offset))
         y_offset += 60
 
+
+def draw_game_over():
+    pygame.draw.rect(screen, 'black', [200, 200, 400, 70])
+    screen.blit(font.render(f'{winner} won the game!', True, 'white'), (210, 210))
+    screen.blit(font.render(f'Press enter to restart!', True, 'white'), (210, 240))
+    
+def check_winner():
+    global winner, turn_step, green_captured_pieces, red_captured_pieces, is_game_over
+
+
+    if 'knight' in green_captured_pieces:
+        winner = 'Green'
+        # print(f'red knight has been captured')
+    elif 'knight' in green_captured_pieces:
+        winner = 'Red'
+        # print(f'green knight has been captured')
+    elif turn_step in (2,3) and 'poison' in green_captured_pieces + red_captured_pieces:
+        winner = 'Green'
+        # print(f'red knight has been eaten a poison')
+    elif turn_step in (0,1) and 'poison' in green_captured_pieces + red_captured_pieces:
+        winner = 'Red'
+        # print(f'green knight has been eaten a poison')
+    
+    if winner:
+        is_game_over = True
+    return winner
+    
 
 ##########################################################################
 # MAIN LOOP
@@ -461,21 +483,35 @@ while run:
     draw_board()
     draw_pieces()
     draw_captured_values()
-    draw_poisoned_apples()
+     
+    if not is_putting_poison_done:
+        draw_poisoned_apples()
     
     if can_add_values:
         add_apple_values() 
         can_add_values = False
         
-    if selection != 100:
+    if selection != 100 and not is_game_over:
         valid_moves = check_valid_moves()
-        draw_valid(valid_moves)
-        
+        if len(valid_moves) > 0:
+            draw_valid(valid_moves)
+        else:
+            if turn_step in (2, 3) and len(red_locations) < 30:
+                winner = 'Green'
+                print("no moves left for red")
+
+            elif turn_step in (0, 1) and len(green_locations) < 30:
+                winner = 'Red'
+                print("no moves left for green")
+            is_game_over = True
+    
+    
     # event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not is_game_over:
             x_coord = event.pos[0] // 100
             y_coord = event.pos[1] // 100
             click_coords = (x_coord, y_coord)
@@ -484,36 +520,46 @@ while run:
                 if click_coords in red_locations:
                     selection = red_locations.index(click_coords)
                     print(f'red_pieces[selection]: {red_pieces[selection]}')
+                    print(f'red_locations[selection]: {red_locations[selection]}')
+                    print(f'red poison location: {red_poison_locations}')
+                    
                     if red_pieces[selection] == 'knight':  # Only allow selection if it's a knight
                         if turn_step == 0:
                             turn_step = 1
                             
                 if click_coords in valid_moves and selection != 100:
-                    red_locations[selection] = click_coords
-                    print(f'red_locations[selection]: {red_locations[selection]}')
                     
                     if len(extra_red_apple) != 0:
                         index = list(extra_red_apple.keys())[0]
-                        if extra_red_apple[index] in red_poison_locations:
-                            red_pieces.insert(index, 'poison')
-                        else:
-                            red_pieces.insert(index, 'apple')
+                        red_pieces.insert(index, 'apple')
                         red_locations.insert(index, extra_red_apple[index])
                         extra_red_apple = {}
                         
                     if click_coords in green_locations:
-                        green_piece = green_locations.index(click_coords)
-                        captured_pieces_red.append(green_apple_values[click_coords])
-                        print(f"green pieces[green piece]: {green_pieces[green_piece]}")
-                        green_pieces.pop(green_piece)
-                        print(f"green locations[green piece]: {green_locations[green_piece]}")
-                        green_locations.pop(green_piece)
+                        green_piece_idx = green_locations.index(click_coords)
+                        if green_pieces[green_piece_idx] == 'knight':
+                            winner = "Red"
+                            is_game_over = True
+                        else:
+                            red_captured_locations.append(green_apple_values[click_coords])
+                            red_captured_pieces.append(green_pieces[selection])
+                        
+                        if green_pieces[green_piece_idx] == 'poison':
+                            winner = "Green"
+                            is_game_over = True
+                            
+                        green_pieces.pop(green_piece_idx)
+                        green_locations.pop(green_piece_idx)
 
                     elif click_coords in red_locations:
-                        red_piece = red_locations.index(click_coords)
-                        extra_red_apple = {red_piece: click_coords}
-                        red_pieces.pop(red_piece)
-                        red_locations.pop(red_piece)
+                        red_captured_pieces.append(red_pieces[selection])
+                        red_piece_idx = red_locations.index(click_coords)
+                        extra_red_apple = {red_piece_idx: click_coords}
+                        if red_pieces[red_piece_idx] == 'poison':
+                            winner = 'Green'
+                            is_game_over = True
+                        red_pieces.pop(red_piece_idx)
+                        red_locations.pop(red_piece_idx)
                     
                     red_locations[0] = click_coords
                     red_pieces[0] = 'knight'
@@ -522,51 +568,79 @@ while run:
                     red_options = check_options(red_pieces, red_locations, 'red')
                     turn_step = 2
                     selection = 100
-                    isSecondIter = True
-                    valid_moves = []
-                    
-                    
+                    valid_moves = [] 
+            
+            
             if turn_step > 1: # green to move
-
                 if click_coords in green_locations:
                     selection = green_locations.index(click_coords)
+                    print(f'green_pieces[selection]: {green_pieces[selection]}')
+                    print(f'green poison location: {green_poison_locations}')
                     if green_pieces[selection] == 'knight':  # Only allow selection if it's a knight
                         if turn_step == 2:
                             turn_step = 3
                                                         
                 if click_coords in valid_moves and selection != 100:
-                    green_locations[selection] = click_coords
         
                     if len(extra_green_apple) != 0:
                         index = list(extra_green_apple.keys())[0]
-                        if extra_green_apple[index] in green_poison_locations:
-                            green_pieces.insert(index, 'poison')
-                        else:
-                            green_pieces.insert(index, 'apple')
+                        green_pieces.insert(index, 'apple')
                         green_locations.insert(index, extra_green_apple[index])
                         extra_green_apple = {}
                     
                     if click_coords in red_locations:
-                        red_piece = red_locations.index(click_coords)
-                        captured_pieces_green.append(red_apple_values[click_coords])
-                        red_pieces.pop(red_piece)
-                        red_locations.pop(red_piece)                      
+                        red_piece_idx = red_locations.index(click_coords)
+                        if red_pieces[red_piece_idx] == 'knight':
+                            winner = 'Green'
+                            is_game_over = True
+                        else:
+                            green_captured_locations.append(red_apple_values[click_coords])
+                            green_captured_pieces.append(red_pieces[selection])
+                        
+                        if red_pieces[red_piece_idx] == 'poison':
+                            winner = "Red"
+                            is_game_over = True
+                        
+                        red_pieces.pop(red_piece_idx)
+                        red_locations.pop(red_piece_idx)                      
                         
                     elif click_coords in green_locations:
-                        green_piece = green_locations.index(click_coords)
-                        extra_green_apple = {green_piece: click_coords}
-                        green_pieces.pop(green_piece)
-                        green_locations.pop(green_piece)
-                    
+                        green_captured_pieces.append(green_pieces[selection])
+                        green_piece_idx = green_locations.index(click_coords)
+                        extra_green_apple = {green_piece_idx: click_coords}
+                        if green_pieces[green_piece_idx] == 'poison':
+                            winner = 'Red'
+                            is_game_over = True
+                        green_pieces.pop(green_piece_idx)
+                        green_locations.pop(green_piece_idx)
+                        
+                    round_counter += 1
+                    print(f'round {round_counter}')
                     green_locations[-1] = click_coords
-                    green_pieces[-1] = 'knight'
-                    
+                    green_pieces[-1] = 'knight'   
                     green_options = check_options(green_pieces, green_locations, 'green')
                     red_options = check_options(red_pieces, red_locations, 'red')
                     turn_step = 0
                     selection = 100
                     valid_moves = []
-                
-                
+        
+        if event.type == pygame.KEYDOWN and is_game_over:
+            if event.key == pygame.K_RETURN:
+                is_game_over = False
+                winner = None
+            
+        
+    if winner or round_counter == 10:
+        is_game_over = True
+        if not winner:
+            sum_red_apple_values = sum(red_captured_locations)
+            sum_green_apple_values = sum(green_captured_locations)
+            if sum_green_apple_values > sum_green_apple_values:
+                winner = 'Green' 
+            else:
+                winner = 'Red'
+        round_counter = 1
+        draw_game_over()
+        
     pygame.display.flip()
 pygame.quit()
