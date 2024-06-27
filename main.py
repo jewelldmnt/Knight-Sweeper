@@ -65,6 +65,11 @@ can_add_values = False
 winner = None
 is_game_over = False 
 round_counter = 1
+is_golden_eaten = False
+count_red_shield = 0
+count_green_shield = 0
+is_red_clue = False
+is_green_clue = False
 
 # Dictionaries to store apple values
 red_apple_values = {}
@@ -224,6 +229,15 @@ def draw_board():
         else:
             status_text = ['Red: Choose where to put the poison apple', 'Green: Choose where to put the poison apple']
             screen.blit(font.render(status_text[turn_step_putting_poison], True, 'black'), (20, 820))
+        
+        golden_text = None
+        if count_red_shield > 0 and turn_step == 1:
+            golden_text = f"Red: You have {count_red_shield} shield!"
+        elif count_green_shield > 0 and turn_step == 3:
+            golden_text = f"Green: You have {count_green_shield} shield!"
+            
+        screen.blit(font.render(golden_text, True, 'black'), (20, 860))
+            
         for i in range(9):
             pygame.draw.line(screen, 'black', (0, 100 * i), (800, 100 * i), 2)
             pygame.draw.line(screen, 'black', (100 * i, 0), (100 * i, 800), 2)
@@ -466,7 +480,58 @@ def check_winner():
         is_game_over = True
     return winner
     
+def draw_dialogue_box():
+    """
+    Draws a dialogue box asking the user to choose between a shield or clues about the poison location.
 
+    Parameters:
+    None
+
+    Returns:
+    str: The choice made by the user ('shield' or 'clues').
+    """
+    # Define dialogue box dimensions and position
+    box_width = 400
+    box_height = 200
+    box_x = (WIDTH - box_width) // 2
+    box_y = (HEIGHT - box_height) // 2
+
+    # Define text options and their positions
+    congrats_text = font.render(f"You have eaten a golden apple!", True, 'black')
+    choose_text = font.render(f"Choose an option:", True, 'black')
+    shield_text = font.render("1. Shield", True, 'black')
+    clues_text = font.render("2. Clues about poison", True, 'black')
+
+    # Create rectangles for clickable areas
+    shield_rect = pygame.Rect(box_x + 50, box_y + 100, shield_text.get_width(), shield_text.get_height())
+    clues_rect = pygame.Rect(box_x + 50, box_y + 140, clues_text.get_width(), clues_text.get_height())
+
+
+    # Draw the dialogue box and text options
+    pygame.draw.rect(screen, 'white', [box_x, box_y, box_width, box_height])
+    pygame.draw.rect(screen, 'black', [box_x, box_y, box_width, box_height], 3)
+    screen.blit(congrats_text, (box_x + 50, box_y + 20))
+    screen.blit(choose_text, (box_x + 50, box_y + 60))
+    screen.blit(shield_text, (box_x + 50, box_y + 100))
+    screen.blit(clues_text, (box_x + 50, box_y + 140))
+
+    pygame.display.flip()
+    # Wait for user input
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return None
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if shield_rect.collidepoint(mouse_pos):
+                    return 'shield'
+                elif clues_rect.collidepoint(mouse_pos):
+                    return 'clues'
+    
+    
+      
+                 
 ##########################################################################
 # MAIN LOOP
 ##########################################################################
@@ -490,7 +555,24 @@ while run:
     if can_add_values:
         add_apple_values() 
         can_add_values = False
-        
+    
+    if is_golden_eaten:
+        choice = draw_dialogue_box()
+        if choice == 'shield':
+            if turn_step in (0, 1):
+                count_green_shield += 1
+            else:
+                count_red_shield += 1
+                    
+        elif choice == 'clues':
+            if turn_step in (0, 1):
+                is_green_clue = True
+            else:
+                is_red_clue = True     
+                
+        is_golden_eaten = False
+
+    
     if selection != 100 and not is_game_over:
         valid_moves = check_valid_moves()
         if len(valid_moves) > 0:
@@ -545,8 +627,15 @@ while run:
                             red_captured_pieces.append(green_pieces[selection])
                         
                         if green_pieces[green_piece_idx] == 'poison':
-                            winner = "Green"
-                            is_game_over = True
+                            if count_red_shield == 0:
+                                winner = "Green"
+                                is_game_over = True
+                            else:
+                                count_red_shield -= 1
+                        
+                        if green_pieces[green_piece_idx] == 'golden':
+                            is_golden_eaten = True
+
                             
                         green_pieces.pop(green_piece_idx)
                         green_locations.pop(green_piece_idx)
@@ -598,8 +687,14 @@ while run:
                             green_captured_pieces.append(red_pieces[selection])
                         
                         if red_pieces[red_piece_idx] == 'poison':
-                            winner = "Red"
-                            is_game_over = True
+                            if count_green_shield == 0:
+                                winner = "Red"
+                                is_game_over = True
+                            else:
+                                count_green_shield -= 1
+                                                
+                        if red_pieces[red_piece_idx] == 'golden':
+                            is_golden_eaten = True
                         
                         red_pieces.pop(red_piece_idx)
                         red_locations.pop(red_piece_idx)                      
