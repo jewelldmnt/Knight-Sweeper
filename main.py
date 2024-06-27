@@ -69,7 +69,9 @@ is_golden_eaten = False
 count_red_shield = 0
 count_green_shield = 0
 is_red_clue = False
+red_golden_clue_pos = []
 is_green_clue = False
+green_golden_clue_pos = []
 
 # Dictionaries to store apple values
 red_apple_values = {}
@@ -241,7 +243,17 @@ def draw_board():
         for i in range(9):
             pygame.draw.line(screen, 'black', (0, 100 * i), (800, 100 * i), 2)
             pygame.draw.line(screen, 'black', (100 * i, 0), (100 * i, 800), 2)
-
+            
+    # Loop through red golden clue positions and draw blue highlight
+    for pos in red_golden_clue_pos:
+        x, y = pos
+        pygame.draw.rect(screen, 'dark gray', (x * 100 + 1, y * 100 + 1, 98, 98))
+    
+    # Loop through green golden clue positions and draw blue highlight
+    for pos in green_golden_clue_pos:
+        x, y = pos
+        pygame.draw.rect(screen, 'dark gray', (x * 100 + 1, y * 100 + 1, 98, 98))
+        
 def draw_pieces():
     """
     Draws the game pieces on the board, including highlighting the selected piece.
@@ -530,8 +542,71 @@ def draw_dialogue_box():
                     return 'clues'
     
     
-      
-                 
+def draw_golden_clues():
+    """
+    Draws blue highlighting on cells adjacent to the poisoned region that do not have a value of 1.
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
+    global screen, red_poison_locations, green_poison_locations, red_apple_values, green_apple_values
+    
+    def is_valid_position(pos, poisoned_locations, player):
+        x, y = pos
+        # Check if position is out of bounds (negative positions)
+        if x < 0 or y < 0 or x > 7 or y > 7:
+            return False
+        # Check if position is in poisoned locations, golden apples locations, or horse location
+        if player == 'red':
+            if pos in poisoned_locations or pos == (0, 0) or pos in green_locations:
+                return False
+            if pos in red_apple_values.keys():
+                if red_apple_values[pos] == 1:
+                    return False
+        else:
+            if pos in poisoned_locations or pos == (7, 7) or pos in red_locations:
+                return False   
+            if pos in green_apple_values.keys():
+                if green_apple_values[pos] == 1:
+                    return False
+            
+        return True
+    
+    def possible_adjacent_locations(poisoned_locations, player):
+        adjacent_cells = []
+        for loc in poisoned_locations:
+            x, y = loc
+            adjacent_positions = [(x+1, y), (x-1, y), (x, y+1), (x, y-1), (x+1, y+1), (x-1, y-1), (x+1, y-1), (x-1, y+1)]
+            adj_cells_for_loc = []
+            for pos in adjacent_positions:
+                if is_valid_position(pos, poisoned_locations, player):
+                    adj_cells_for_loc.append(pos)
+            adj_cells_for_loc.sort(key=lambda cell: len([c for c in adjacent_positions if is_valid_position(c, poisoned_locations, player)]))
+            adjacent_cells.append(adj_cells_for_loc)
+        
+        for cell in adjacent_cells[0]:
+            if cell in adjacent_cells[1]:
+                adjacent_cells[1].remove(cell)
+                
+        return list(set(adjacent_cells[0] + adjacent_cells[1]))
+    
+    if turn_step in (0,1):
+        # Get adjacent cells for red poisoned apples
+        red_poisoned_adjacent_cells = possible_adjacent_locations(red_poison_locations, 'red')
+        red_golden_clue_pos.append(random.choice(red_poisoned_adjacent_cells))
+        print(f'red golden clues position: {red_golden_clue_pos}')
+    else:
+        # Get adjacent cells for green poisoned apples
+        green_poisoned_adjacent_cells = possible_adjacent_locations(green_poison_locations, 'green')
+        green_golden_clue_pos.append(random.choice(green_poisoned_adjacent_cells))
+        print(f'green golden clues position: {green_golden_clue_pos}')
+    
+    
+
+
 ##########################################################################
 # MAIN LOOP
 ##########################################################################
@@ -564,12 +639,9 @@ while run:
             else:
                 count_red_shield += 1
                     
-        elif choice == 'clues':
-            if turn_step in (0, 1):
-                is_green_clue = True
-            else:
-                is_red_clue = True     
-                
+        elif choice == 'clues':   
+            draw_golden_clues()
+            
         is_golden_eaten = False
 
     
