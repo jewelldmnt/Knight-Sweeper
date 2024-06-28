@@ -23,28 +23,13 @@ timer = pygame.time.Clock()
 ##########################################################################
 # Define the red pieces and their initial locations
 red_pieces = ['knight'] + ['apple'] * 31
-red_locations = [(0,0), (1,0), (2,0), (3,0),
-                 (0,1), (1,1), (2,1), (3,1),
-                 (0,2), (1,2), (2,2), (3,2),
-                 (0,3), (1,3), (2,3), (3,3),
-                 (0,4), (1,4), (2,4), (3,4),
-                 (0,5), (1,5), (2,5), (3,5),
-                 (0,6), (1,6), (2,6), (3,6),
-                 (0,7), (1,7), (2,7), (3,7)]
+red_locations = [(x, y) for y in range(8) for x in range(4)]
 red_apples_locations = red_locations[1:]
 extra_red_apple = {}
 
 # Define the green pieces and their initial locations
-green_pieces = ['apple'] * 31
-green_pieces = green_pieces + ['knight']
-green_locations = [(4,0), (5,0), (6,0), (7,0),
-                 (4,1), (5,1), (6,1), (7,1),
-                 (4,2), (5,2), (6,2), (7,2),
-                 (4,3), (5,3), (6,3), (7,3),
-                 (4,4), (5,4), (6,4), (7,4),
-                 (4,5), (5,5), (6,5), (7,5),
-                 (4,6), (5,6), (6,6), (7,6),
-                 (4,7), (5,7), (6,7), (7,7)]
+green_pieces = ['apple'] * 31 + ['knight']
+green_locations = [(x, y) for y in range(8) for x in range(4, 8)]
 green_apples_locations = green_locations[:-1]
 extra_green_apple = {}
 
@@ -53,8 +38,7 @@ red_captured_values = []
 green_captured_values = []
 
 # Turn and game state variables
-# 0 - red turn no selection; 1 - red turn piece selected; 2 - green turn no selection; 3 - green turn piece selected
-turn_step = 0
+turn_step = 0   # 0 - red turn no selection; 1 - red turn piece selected; 2 - green turn no selection; 3 - green turn piece selected
 turn_step_putting_poison = 0
 selection = 100
 valid_moves = [] 
@@ -89,41 +73,26 @@ green_golden_locations = []
 ##########################################################################
 # load in game pieces
 apple_scale = (50, 50)
-apple_scale_small = (30, 30)
 knight_scale = (80, 80)
-knight_scale_small = (60, 60)
 
-red_apple = pygame.image.load('assets/red_apple.png')
-red_apple = pygame.transform.scale(red_apple, apple_scale)
+# Load and scale images
+def load_image(path, scale):
+    image = pygame.image.load(path)
+    return pygame.transform.scale(image, scale)
 
-red_knight = pygame.image.load('assets/red_knight.png')
-red_knight = pygame.transform.scale(red_knight, knight_scale)
+# Load and scale all game pieces
+red_apple = load_image('assets/red_apple.png', apple_scale)
+red_knight = load_image('assets/red_knight.png', knight_scale)
+green_knight = load_image('assets/green_knight.png', knight_scale)
+green_apple = load_image('assets/green_apple.png', apple_scale)
+red_poisoned_apple = load_image('assets/red_poisoned_apple.png', apple_scale)
+green_poisoned_apple = load_image('assets/green_poisoned_apple.png', apple_scale)
+gold_apple = load_image('assets/gold_apple.png', apple_scale)
 
-green_knight = pygame.image.load('assets/green_knight.png')
-green_knight = pygame.transform.scale(green_knight, knight_scale)
-green_knight_small = pygame.transform.scale(green_knight, knight_scale_small)
-
-green_apple = pygame.image.load('assets/green_apple.png')
-green_apple = pygame.transform.scale(green_apple, apple_scale)
-green_apple_small = pygame.transform.scale(green_apple, apple_scale_small)
-
-red_poisoned_apple = pygame.image.load('assets/red_poisoned_apple.png')
-red_poisoned_apple = pygame.transform.scale(red_poisoned_apple, apple_scale)
-
-green_poisoned_apple = pygame.image.load('assets/green_poisoned_apple.png')
-green_poisoned_apple = pygame.transform.scale(green_poisoned_apple, apple_scale)
-
-gold_apple = pygame.image.load('assets/gold_apple.png')
-gold_apple = pygame.transform.scale(gold_apple, apple_scale)
-gold_apple_small = pygame.transform.scale(gold_apple, apple_scale_small)
-
+# Organize images into lists
 red_images = [red_knight, red_apple, red_poisoned_apple, gold_apple]
 green_images = [green_knight, green_apple, green_poisoned_apple, gold_apple]
-
-powerups = [gold_apple, red_poisoned_apple]
-
 piece_list = ['knight', 'apple', 'poison', 'golden']
-powerups_list = ['golden', 'poison']
 
 # check variables / flashing the counter
 def add_apple_values():
@@ -147,12 +116,13 @@ def add_apple_values():
             return False
         # Check if position is in poisoned locations, golden apples locations, or horse location
         if player == 'red':
-            if pos in poisoned_locations or pos in red_golden_locations or pos == (0,0) or pos in green_locations:
-                return False
+            forbidden_locations = set(poisoned_locations) | set(red_golden_locations) | {(0, 0)} | set(green_locations)
+
         else:
-            if pos in poisoned_locations or pos in green_golden_locations or pos == (7,7) or pos in red_locations:
-                return False   
-        return True
+            forbidden_locations = set(poisoned_locations) | set(green_golden_locations) | {(7, 7)} | set(red_locations)
+ 
+        return pos not in forbidden_locations
+    
     
     def get_adjacent_cells(poisoned_locations, player):
         adjacent_cells = []
@@ -239,6 +209,7 @@ def draw_board():
             status_text = ['Red: Choose where to put the poison apple', 'Green: Choose where to put the poison apple']
             screen.blit(font.render(status_text[turn_step_putting_poison], True, 'black'), (20, 820))
         
+        # if players have shield
         golden_text = None
         if count_red_shield > 0 and turn_step == 1:
             golden_text = f"Red: You have {count_red_shield} shield!"
@@ -589,7 +560,55 @@ def draw_golden_clues():
         green_poisoned_adjacent_cells = possible_adjacent_locations(green_poison_locations, 'green')
         green_golden_clue_pos.append(random.choice(green_poisoned_adjacent_cells))
     
+import random
+
+def choose_color():
+    """
+    Function to let the player choose between Red and Green before starting the game.
+    Returns:
+        str: 'red' if the player chooses Red, 'green' if the player chooses Green.
+    """
+    colors = ['dark red', 'dark green']
+    random.shuffle(colors)  # Shuffle the colors to randomize their positions
     
+    while True:
+        screen.fill('white')
+        text = font.render("Choose your color:", True, 'black')
+        text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50))
+        screen.blit(text, text_rect)
+        
+        card_width, card_height = 200, 100
+        card_margin = 50
+        card1_button = pygame.Rect(WIDTH // 4 - card_width // 2, HEIGHT // 2, card_width, card_height)
+        pygame.draw.rect(screen, 'gray', card1_button)  # Replace with initial hidden color
+        pygame.draw.rect(screen, 'black', card1_button, 5)
+        
+        card2_button = pygame.Rect(3 * WIDTH // 4 - card_width // 2, HEIGHT // 2, card_width, card_height)
+        pygame.draw.rect(screen, 'gray', card2_button)  # Replace with initial hidden color
+        pygame.draw.rect(screen, 'black', card2_button, 5)
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return None
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                if card1_button.collidepoint(mouse_pos):
+                    # Flip card 1 to reveal true color
+                    pygame.draw.rect(screen, colors[0], card1_button)
+                    pygame.display.flip()
+                    pygame.time.wait(1000)  # Optional delay before returning color
+                    return colors[0]
+                elif card2_button.collidepoint(mouse_pos):
+                    # Flip card 2 to reveal true color
+                    pygame.draw.rect(screen, colors[1], card2_button)
+                    pygame.display.flip()
+                    pygame.time.wait(1000)  # Optional delay before returning color
+                    return colors[1]
+
+
 
 
 ##########################################################################
@@ -597,9 +616,11 @@ def draw_golden_clues():
 ##########################################################################
 draw_golden_apples()
 
+# Determine initial options for each player
 green_options = check_options(green_pieces, green_locations, 'green')
 red_options = check_options(red_pieces, red_locations, 'red')
 
+choose_color()
 
 run = True
 while run:
@@ -629,7 +650,6 @@ while run:
             
         is_golden_eaten = False
 
-    
     if selection != 100 and not is_game_over:
         valid_moves = check_valid_moves()
         if len(valid_moves) > 0:
@@ -655,7 +675,8 @@ while run:
             y_coord = event.pos[1] // 100
             click_coords = (x_coord, y_coord)
             
-            if turn_step <= 1: # red to move              
+            # Red player's turn handling
+            if turn_step <= 1:   
                 if click_coords in red_locations:
                     selection = red_locations.index(click_coords)                  
                     if red_pieces[selection] == 'knight':  # Only allow selection if it's a knight
@@ -713,8 +734,8 @@ while run:
                     selection = 100
                     valid_moves = [] 
             
-            
-            if turn_step > 1: # green to move
+            # Green player's turn handling
+            if turn_step > 1: 
                 if click_coords in green_locations:
                     selection = green_locations.index(click_coords)
                     if green_pieces[selection] == 'knight':  # Only allow selection if it's a knight
@@ -776,7 +797,7 @@ while run:
                 is_game_over = False
                 winner = None
             
-        
+    # Determine winner and end game conditions
     if winner or round_counter == 10:
         is_game_over = True
         if not winner:
