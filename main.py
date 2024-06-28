@@ -45,14 +45,12 @@ green_locations = [(4,0), (5,0), (6,0), (7,0),
                  (4,5), (5,5), (6,5), (7,5),
                  (4,6), (5,6), (6,6), (7,6),
                  (4,7), (5,7), (6,7), (7,7)]
-green_apples_locations = green_locations[:-2]
+green_apples_locations = green_locations[:-1]
 extra_green_apple = {}
 
 # Lists to keep track of captured pieces for each player
-red_captured_locations = []
-red_captured_pieces = []
-green_captured_locations = []
-green_captured_pieces = []
+red_captured_values = []
+green_captured_values = []
 
 # Turn and game state variables
 # 0 - red turn no selection; 1 - red turn piece selected; 2 - green turn no selection; 3 - green turn piece selected
@@ -154,54 +152,67 @@ def add_apple_values():
         else:
             if pos in poisoned_locations or pos in green_golden_locations or pos == (7,7) or pos in red_locations:
                 return False   
-            
         return True
     
-    def possible_adjacent_locations(poisoned_locations, player):
+    def get_adjacent_cells(poisoned_locations, player):
         adjacent_cells = []
         for loc in poisoned_locations:
             x, y = loc
-            adjacent_positions = [(x+1, y), (x-1, y), (x, y+1), (x, y-1), (x+1, y+1), (x-1, y-1), (x+1, y-1), (x-1, y+1)]
-            adj_cells_for_loc = []
-            for pos in adjacent_positions:
-                if is_valid_position(pos, poisoned_locations, player):
-                    adj_cells_for_loc.append(pos)
-            adj_cells_for_loc.sort(key=lambda cell: len([c for c in adjacent_positions if is_valid_position(c, poisoned_locations, player)]))
+            adjacent_positions = [
+                (x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1),
+                (x + 1, y + 1), (x - 1, y - 1), (x + 1, y - 1), (x - 1, y + 1)
+            ]
+            adj_cells_for_loc = [
+                pos for pos in adjacent_positions
+                if is_valid_position(pos, poisoned_locations, player)
+            ]
+            adj_cells_for_loc.sort(
+                key=lambda cell: len([
+                    c for c in adjacent_positions if is_valid_position(c, poisoned_locations, player)
+                ])
+            )
+            random.shuffle(adj_cells_for_loc)
             adjacent_cells.append(adj_cells_for_loc)
-        
-        for cell in adjacent_cells[0]:
-            if cell in adjacent_cells[1]:
-                adjacent_cells[1].remove(cell)
-                
-        return list(set(adjacent_cells[0] + adjacent_cells[1]))
+
+        return adjacent_cells
         
     # Get adjacent cells for red poisoned apples
-    red_poisoned_adjacent_cells = possible_adjacent_locations(red_poison_locations, 'red')
-    # Get adjacent cells for green poisoned apples
-    green_poisoned_adjacent_cells = possible_adjacent_locations(green_poison_locations, 'green')
-    
+    red_poisoned_adjacent_cells = get_adjacent_cells(red_poison_locations, 'red')
     for idx, cell in enumerate(red_poisoned_adjacent_cells):
         if idx == 4:
             break
-        if cell not in red_apple_values:
-            red_apple_values[cell] = 1
-            
+        for pos in cell:
+            if pos not in red_apple_values:
+                red_apple_values[pos] = 1
+                break
+    
+    if len(red_apple_values) < 4: 
+        for i in range(4-len(red_apple_values)):
+            for pos in list(set(red_poisoned_adjacent_cells[0] + red_poisoned_adjacent_cells[1] + red_poisoned_adjacent_cells[2] + red_poisoned_adjacent_cells[3])):
+                if pos not in red_apple_values:
+                    red_apple_values.update({pos: 1})
+                    break
+
+    red_apple_values.update({loc: random.randint(2, 9) for loc in red_apples_locations if loc not in red_apple_values})
+
+    
+    # Get adjacent cells for green poisoned apples
+    green_poisoned_adjacent_cells = get_adjacent_cells(green_poison_locations, 'green')
     for idx, cell in enumerate(green_poisoned_adjacent_cells):
         if idx == 4:
             break
-        if cell not in green_apple_values:
-            green_apple_values[cell] = 1
-
-
-    if len(red_apple_values) < 4: 
-        for i in range(4-len(red_apple_values)):
-            red_apple_values.update({loc: 1 for loc in red_apples_locations if loc not in red_apple_values})
-            
+        for pos in cell:
+            if pos not in green_apple_values:
+                green_apple_values[pos] = 1
+                break
+                    
     if len(green_apple_values) < 4: 
         for i in range(4-len(green_apple_values)):
-            green_apple_values.update({loc: 1 for loc in green_apples_locations if loc not in green_apple_values})
+            for pos in list(set(green_poisoned_adjacent_cells[0] + green_poisoned_adjacent_cells[1] + green_poisoned_adjacent_cells[2] + green_poisoned_adjacent_cells[3])):
+                if pos not in green_apple_values:
+                    green_apple_values.update({pos: 1})
+                    break
 
-    red_apple_values.update({loc: random.randint(2, 9) for loc in red_apples_locations if loc not in red_apple_values})
     green_apple_values.update({loc: random.randint(2, 9) for loc in green_apples_locations if loc not in green_apple_values})
 
 
@@ -338,7 +349,7 @@ def draw_poisoned_apples():
                 red_piece_index = red_locations.index(click_coords)
                 red_pieces[red_piece_index] = 'poison'
                 
-                if len(red_poison_locations) == 2:
+                if len(red_poison_locations) == 4:
                     turn_step_putting_poison = 1
                     
             elif turn_step_putting_poison == 1 and click_coords in green_locations and click_coords != (7, 7) and click_coords not in green_golden_locations and click_coords not in green_poison_locations:
@@ -346,7 +357,7 @@ def draw_poisoned_apples():
                 green_piece_index = green_locations.index(click_coords)
                 green_pieces[green_piece_index] = 'poison'
                 
-                if len(green_poison_locations) == 2:
+                if len(green_poison_locations) == 4:
                     is_putting_poison_done = True
                     can_add_values = True
 
@@ -450,8 +461,8 @@ def draw_captured_values():
     None
     """
 
-    red_score = sum(red_captured_locations)        
-    green_score = sum(green_captured_locations)
+    red_score = sum(red_captured_values)        
+    green_score = sum(green_captured_values)
     
     score_text = f"Round: {round_counter} \nScores:\nred = {red_score}\ngreen = {green_score}"
     
@@ -668,8 +679,7 @@ while run:
                             winner = "Red"
                             is_game_over = True
                         else:
-                            red_captured_locations.append(green_apple_values[click_coords])
-                            red_captured_pieces.append(green_pieces[selection])
+                            red_captured_values.append(green_apple_values[click_coords])
                         
                         if green_pieces[green_piece_idx] == 'poison':
                             if count_red_shield == 0:
@@ -686,7 +696,6 @@ while run:
                         green_locations.pop(green_piece_idx)
 
                     elif click_coords in red_locations:
-                        red_captured_pieces.append(red_pieces[selection])
                         red_piece_idx = red_locations.index(click_coords)
                         extra_red_apple = {red_piece_idx: click_coords}
                         if red_pieces[red_piece_idx] == 'poison':
@@ -729,8 +738,7 @@ while run:
                             winner = 'Green'
                             is_game_over = True
                         else:
-                            green_captured_locations.append(red_apple_values[click_coords])
-                            green_captured_pieces.append(red_pieces[selection])
+                            green_captured_values.append(red_apple_values[click_coords])
                         
                         if red_pieces[red_piece_idx] == 'poison':
                             if count_green_shield == 0:
@@ -746,7 +754,6 @@ while run:
                         red_locations.pop(red_piece_idx)                      
                         
                     elif click_coords in green_locations:
-                        green_captured_pieces.append(green_pieces[selection])
                         green_piece_idx = green_locations.index(click_coords)
                         extra_green_apple = {green_piece_idx: click_coords}
                         if green_pieces[green_piece_idx] == 'poison':
@@ -773,8 +780,8 @@ while run:
     if winner or round_counter == 10:
         is_game_over = True
         if not winner:
-            sum_red_apple_values = sum(red_captured_locations)
-            sum_green_apple_values = sum(green_captured_locations)
+            sum_red_apple_values = sum(red_captured_values)
+            sum_green_apple_values = sum(green_captured_values)
             if sum_green_apple_values > sum_green_apple_values:
                 winner = 'Green' 
             else:
