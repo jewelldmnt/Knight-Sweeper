@@ -141,8 +141,6 @@ def add_apple_values():
     None
     """
     global red_apple_values, green_apple_values, red_golden_locations, green_golden_locations, green_locations, red_locations
-    golden_apples_locations = red_golden_locations + green_golden_locations
-    print(f"Golden apples location: {golden_apples_locations}")
 
     def is_valid_position(pos, poisoned_locations, player):
         x, y = pos
@@ -179,10 +177,8 @@ def add_apple_values():
         
     # Get adjacent cells for red poisoned apples
     red_poisoned_adjacent_cells = possible_adjacent_locations(red_poison_locations, 'red')
-    print(f'red poisoned adjacent cells: {red_poisoned_adjacent_cells}')
     # Get adjacent cells for green poisoned apples
     green_poisoned_adjacent_cells = possible_adjacent_locations(green_poison_locations, 'green')
-    print(f'green poisoned adjacent cells: {green_poisoned_adjacent_cells}')
     
     for idx, cell in enumerate(red_poisoned_adjacent_cells):
         if idx == 4:
@@ -471,26 +467,6 @@ def draw_game_over():
     screen.blit(font.render(f'{winner} won the game!', True, 'white'), (210, 210))
     screen.blit(font.render(f'Press enter to restart!', True, 'white'), (210, 240))
     
-def check_winner():
-    global winner, turn_step, green_captured_pieces, red_captured_pieces, is_game_over
-
-
-    if 'knight' in green_captured_pieces:
-        winner = 'Green'
-        # print(f'red knight has been captured')
-    elif 'knight' in green_captured_pieces:
-        winner = 'Red'
-        # print(f'green knight has been captured')
-    elif turn_step in (2,3) and 'poison' in green_captured_pieces + red_captured_pieces:
-        winner = 'Green'
-        # print(f'red knight has been eaten a poison')
-    elif turn_step in (0,1) and 'poison' in green_captured_pieces + red_captured_pieces:
-        winner = 'Red'
-        # print(f'green knight has been eaten a poison')
-    
-    if winner:
-        is_game_over = True
-    return winner
     
 def draw_dialogue_box():
     """
@@ -597,12 +573,10 @@ def draw_golden_clues():
         # Get adjacent cells for red poisoned apples
         red_poisoned_adjacent_cells = possible_adjacent_locations(red_poison_locations, 'red')
         red_golden_clue_pos.append(random.choice(red_poisoned_adjacent_cells))
-        print(f'red golden clues position: {red_golden_clue_pos}')
     else:
         # Get adjacent cells for green poisoned apples
         green_poisoned_adjacent_cells = possible_adjacent_locations(green_poison_locations, 'green')
         green_golden_clue_pos.append(random.choice(green_poisoned_adjacent_cells))
-        print(f'green golden clues position: {green_golden_clue_pos}')
     
     
 
@@ -672,11 +646,7 @@ while run:
             
             if turn_step <= 1: # red to move              
                 if click_coords in red_locations:
-                    selection = red_locations.index(click_coords)
-                    print(f'red_pieces[selection]: {red_pieces[selection]}')
-                    print(f'red_locations[selection]: {red_locations[selection]}')
-                    print(f'red poison location: {red_poison_locations}')
-                    
+                    selection = red_locations.index(click_coords)                  
                     if red_pieces[selection] == 'knight':  # Only allow selection if it's a knight
                         if turn_step == 0:
                             turn_step = 1
@@ -685,7 +655,10 @@ while run:
                     
                     if len(extra_red_apple) != 0:
                         index = list(extra_red_apple.keys())[0]
-                        red_pieces.insert(index, 'apple')
+                        if extra_red_apple[index] in red_golden_locations:
+                            red_pieces.insert(index, 'golden')
+                        else:
+                            red_pieces.insert(index, 'apple')
                         red_locations.insert(index, extra_red_apple[index])
                         extra_red_apple = {}
                         
@@ -735,8 +708,6 @@ while run:
             if turn_step > 1: # green to move
                 if click_coords in green_locations:
                     selection = green_locations.index(click_coords)
-                    print(f'green_pieces[selection]: {green_pieces[selection]}')
-                    print(f'green poison location: {green_poison_locations}')
                     if green_pieces[selection] == 'knight':  # Only allow selection if it's a knight
                         if turn_step == 2:
                             turn_step = 3
@@ -745,7 +716,10 @@ while run:
         
                     if len(extra_green_apple) != 0:
                         index = list(extra_green_apple.keys())[0]
-                        green_pieces.insert(index, 'apple')
+                        if extra_green_apple[index] in green_golden_locations:
+                            green_pieces.insert(index, 'golden')
+                        else:
+                            green_pieces.insert(index, 'apple')
                         green_locations.insert(index, extra_green_apple[index])
                         extra_green_apple = {}
                     
@@ -782,7 +756,6 @@ while run:
                         green_locations.pop(green_piece_idx)
                         
                     round_counter += 1
-                    print(f'round {round_counter}')
                     green_locations[-1] = click_coords
                     green_pieces[-1] = 'knight'   
                     green_options = check_options(green_pieces, green_locations, 'green')
