@@ -1,5 +1,7 @@
 import pygame
 import random
+from Agent import BayesianAgent
+from Board import Board
 
 pygame.init()
 
@@ -26,12 +28,14 @@ red_pieces = ['knight'] + ['apple'] * 31
 red_locations = [(x, y) for y in range(8) for x in range(4)]
 red_apples_locations = red_locations[1:]
 extra_red_apple = {}
+red_apple_clues_pos = []
 
 # Define the green pieces and their initial locations
 green_pieces = ['apple'] * 31 + ['knight']
 green_locations = [(x, y) for y in range(8) for x in range(4, 8)]
 green_apples_locations = green_locations[:-1]
 extra_green_apple = {}
+green_apple_clues_pos = []
 
 # Lists to keep track of captured pieces for each player
 red_captured_values = []
@@ -186,6 +190,7 @@ def add_apple_values():
     green_apple_values.update({loc: random.randint(2, 9) for loc in green_apples_locations if loc not in green_apple_values})
 
 
+
 def draw_board():
     """
     Draws the main game board, including grid lines, status text, and board borders.
@@ -332,7 +337,8 @@ def draw_poisoned_apples():
                     is_putting_poison_done = True
                     can_add_values = True
 
- 
+
+
 # check valid knight moves
 def check_knight(position, color):
     """
@@ -614,13 +620,28 @@ def choose_color():
 ##########################################################################
 # MAIN LOOP
 ##########################################################################
+player = choose_color()
+AI = None
+
+if player == 'dark red':
+    AI = 'green'
+else:
+    AI = 'red'
+
+
+# if player == "dark red":
+#     AI == 'green'
+#     green_agent = BayesianAgent('green', red_apple_values, red_locations)
+# else:
+#     AI = 'red'
+#     red_agent = BayesianAgent('red', green_apple_values, green_locations)
+
 draw_golden_apples()
 
 # Determine initial options for each player
 green_options = check_options(green_pieces, green_locations, 'green')
 red_options = check_options(red_pieces, red_locations, 'red')
 
-choose_color()
 
 run = True
 while run:
@@ -636,7 +657,22 @@ while run:
     if can_add_values:
         add_apple_values() 
         can_add_values = False
-    
+        if AI == 'red':
+            green_apple_clues_pos = [pos for pos, val in green_apple_values.items() if val == 1]
+            red_agent = BayesianAgent('red', green_apple_values, green_locations, green_apple_clues_pos)
+            
+            for clue_pos in green_apple_clues_pos:
+                red_agent.update_clue_probabilities(clue_pos)
+            red_agent.draw_possible_poison_locations()
+            
+        else:
+            red_apple_clues_pos = [pos for pos, val in red_apple_values.items() if val == 1]
+            green_agent = BayesianAgent('green', red_apple_values, red_locations, red_apple_clues_pos)
+
+            for clue_pos in red_apple_clues_pos:
+                green_agent.update_clue_probabilities(clue_pos)
+            green_agent.draw_possible_poison_locations()
+
     if is_golden_eaten:
         choice = draw_dialogue_box()
         if choice == 'shield':
@@ -677,6 +713,7 @@ while run:
             
             # Red player's turn handling
             if turn_step <= 1:   
+
                 if click_coords in red_locations:
                     selection = red_locations.index(click_coords)                  
                     if red_pieces[selection] == 'knight':  # Only allow selection if it's a knight
@@ -727,6 +764,8 @@ while run:
                     
                     red_locations[0] = click_coords
                     red_pieces[0] = 'knight'
+                    green_agent.update_probability(click_coords)
+                    green_agent.draw_possible_poison_locations()
                     
                     green_options = check_options(green_pieces, green_locations, 'green')
                     red_options = check_options(red_pieces, red_locations, 'red')
@@ -736,6 +775,7 @@ while run:
             
             # Green player's turn handling
             if turn_step > 1: 
+                    
                 if click_coords in green_locations:
                     selection = green_locations.index(click_coords)
                     if green_pieces[selection] == 'knight':  # Only allow selection if it's a knight
