@@ -1,9 +1,8 @@
 import pygame
 import random
-from Agent import BayesianAgent, MinimaxAgent
+from Agent import MinimaxAgent
 
 pygame.init()
-
 
 ##########################################################################
 # SCREEN DISPLAY
@@ -619,10 +618,10 @@ def choose_color():
 ##########################################################################
 # MAIN LOOP
 ##########################################################################
-human_agent = 'red'
+human_agent = 'dark red'
 AI_color = 'red' if human_agent == 'dark green' else 'green'
-print(f"AI Color: {AI_color}")
 player = 0 # 0  - human player 1 - AI agent
+AI_prev_move = (0,0) if human_agent == 'dark green' else (7,7)
 draw_golden_apples()
 
 # Determine initial options for each player
@@ -637,7 +636,8 @@ while run:
     draw_board()
     draw_pieces()
     draw_captured_values()
-     
+    num_of_poisons = len(red_poison_locations) + len(green_poison_locations) + 1
+
     if not is_putting_poison_done:
         draw_poisoned_apples()
     
@@ -646,21 +646,18 @@ while run:
         can_add_values = False
         if human_agent == 'dark green':
             green_apple_clues_pos = [pos for pos, val in green_apple_values.items() if val == 1]
-            agent = MinimaxAgent('red', green_apple_values, green_locations, green_apple_clues_pos)
+            agent = MinimaxAgent('red', green_apple_values, green_locations, green_apple_clues_pos, red_poison_locations)
             player = 1
-            
             for clue_pos in green_apple_clues_pos:
                 agent.update_clue_probabilities(clue_pos)
-            agent.draw_possible_poison_locations()
-            
+            agent.draw_possible_poison_locations(num_of_poisons)
         else:
             red_apple_clues_pos = [pos for pos, val in red_apple_values.items() if val == 1]
-            agent = MinimaxAgent('green', red_apple_values, red_locations, red_apple_clues_pos)
+            agent = MinimaxAgent('green', red_apple_values, red_locations, red_apple_clues_pos, green_poison_locations)
             player = 0
-
             for clue_pos in red_apple_clues_pos:
                 agent.update_clue_probabilities(clue_pos)
-            agent.draw_possible_poison_locations()
+            agent.draw_possible_poison_locations(num_of_poisons)
 
     if is_golden_eaten:
         choice = draw_dialogue_box()
@@ -669,10 +666,8 @@ while run:
                 count_green_shield += 1
             else:
                 count_red_shield += 1
-                    
         elif choice == 'clues':   
             draw_golden_clues()
-            
         is_golden_eaten = False
 
     if selection != 100 and not is_game_over:
@@ -688,8 +683,7 @@ while run:
                 winner = 'Red'
                 print("no moves left for green")
             is_game_over = True
-    
-    
+        
     # event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -703,9 +697,9 @@ while run:
             
             # Red player's turn handling
             if turn_step <= 1:  
+                filtered_moves = [move for move in valid_moves if move != AI_prev_move]
                 if AI_color == 'red':
-                    print("red")
-                    click_coords = agent.minimax_action(valid_moves)
+                    click_coords = agent.minimax_action(filtered_moves)
                     print(f"Clicked coords: {click_coords}")
                     
                 if click_coords in red_locations:
@@ -715,7 +709,6 @@ while run:
                             turn_step = 1
                             
                 if click_coords in valid_moves and selection != 100:
-                    
                     if len(extra_red_apple) != 0:
                         index = list(extra_red_apple.keys())[0]
                         if extra_red_apple[index] in red_golden_locations:
@@ -743,7 +736,6 @@ while run:
                         if green_pieces[green_piece_idx] == 'golden':
                             is_golden_eaten = True
 
-                            
                         green_pieces.pop(green_piece_idx)
                         green_locations.pop(green_piece_idx)
 
@@ -758,8 +750,8 @@ while run:
                     
                     red_locations[0] = click_coords
                     red_pieces[0] = 'knight'
-                    agent.update_probability(click_coords)
-                    agent.draw_possible_poison_locations()
+                    if AI_color == 'red':
+                        AI_prev_move = click_coords
                     
                     green_options = check_options(green_pieces, green_locations, 'green')
                     red_options = check_options(red_pieces, red_locations, 'red')
@@ -769,9 +761,10 @@ while run:
             
             # Green player's turn handling
             if turn_step > 1: 
+                filtered_moves = [move for move in valid_moves if move != AI_prev_move]
                 if AI_color == 'green':
                     print("green")
-                    click_coords = agent.minimax_action(valid_moves)
+                    click_coords = agent.minimax_action(filtered_moves)
                     print(f"Clicked coords: {click_coords}")
                     
                 if click_coords in green_locations:
@@ -781,7 +774,6 @@ while run:
                             turn_step = 3
                                                         
                 if click_coords in valid_moves and selection != 100:
-        
                     if len(extra_green_apple) != 0:
                         index = list(extra_green_apple.keys())[0]
                         if extra_green_apple[index] in green_golden_locations:
@@ -824,6 +816,9 @@ while run:
                     round_counter += 1
                     green_locations[-1] = click_coords
                     green_pieces[-1] = 'knight'   
+                    if AI_color == 'green':
+                        AI_prev_move = click_coords
+                            
                     green_options = check_options(green_pieces, green_locations, 'green')
                     red_options = check_options(red_pieces, red_locations, 'red')
                     turn_step = 0
