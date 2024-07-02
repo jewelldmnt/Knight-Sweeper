@@ -95,6 +95,7 @@ class BayesianAgent:
 class MinimaxAgent(BayesianAgent):
     def __init__(self, player_color, apple_values, locations, clues_pos, my_poison_apples):
         super().__init__(player_color, apple_values, locations, clues_pos, my_poison_apples)
+        #self.opponent_knight_positions = opponent_knight_positions
     
     def minimax_action(self, valid_moves, depth=3):
         best_action = None
@@ -134,10 +135,32 @@ class MinimaxAgent(BayesianAgent):
     
     def calculate_value(self, action):
         x, y = action
+
+        # Check if the move can capture the opponent's knight
+        #if action in self.opponent_knight_positions:
+        #   return float('inf')  # Maximum value for winning
+
+        # Check if the move puts the agent in danger of being captured by the opponent's knight
+        #opponent_moves = self.get_knight_moves(self.opponent_knight_positions)
+        #if action in opponent_moves:
+        #    return -float('inf')  # Minimum value for losing
+
+        # Calculate the value of the move considering the apple points and poison probability
         probability = self.probabilities[y][x]
         apple_value = self.apple_values.get((x, y), 0)
+
+        # Adjust value based on the side of the board
+        if (self.player_color == 'green' and x < 4) or (self.player_color == 'red' and x >= 4):
+            apple_value *= 0.5  # Lower priority for own side apples
+
+        # Further lower the value for apples with a probability greater than 0
+        if probability > 0:
+            apple_value *= 0.1  # Assign lowest priority
+
         value = apple_value - probability * 100  # Weigh poison heavily
+
         return value
+
 
     def is_terminal(self, position):
         x, y = position
