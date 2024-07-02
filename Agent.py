@@ -21,7 +21,6 @@ class BayesianAgent:
 
 
     def update_clue_probabilities(self, revealed_apple_location):
-        print(self.player_color)
         print(f"revealed location: {revealed_apple_location}")
         x, y = revealed_apple_location
         self.probabilities[x][y] = 0.0
