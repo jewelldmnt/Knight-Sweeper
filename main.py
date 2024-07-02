@@ -564,8 +564,6 @@ def draw_golden_clues():
         green_poisoned_adjacent_cells = possible_adjacent_locations(green_poison_locations, 'green')
         green_golden_clue_pos.append(random.choice(green_poisoned_adjacent_cells))
     
-import random
-
 def choose_color():
     """
     Function to let the player choose between Red and Green before starting the game.
@@ -611,8 +609,6 @@ def choose_color():
                     pygame.display.flip()
                     pygame.time.wait(1000)  # Optional delay before returning color
                     return colors[1]
-
-
 
 
 ##########################################################################
