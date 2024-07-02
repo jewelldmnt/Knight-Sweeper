@@ -21,6 +21,7 @@ class BayesianAgent:
 
 
     def update_clue_probabilities(self, revealed_apple_location):
+        print(self.player_color)
         print(f"revealed location: {revealed_apple_location}")
         x, y = revealed_apple_location
         self.probabilities[x][y] = 0.0
@@ -38,7 +39,10 @@ class BayesianAgent:
         print(f'Adjacent cells: {adjacent_cells}')
         possible_poison = set(adjacent_cells).difference(set(self.sure_not_poison))
         num_of_possible_poison = len(possible_poison)
-        probability = 1/num_of_possible_poison
+        if num_of_possible_poison == 0:
+            probability = 0
+        else:
+            probability = 1/num_of_possible_poison
 
         for cell in possible_poison:
             i, j = cell

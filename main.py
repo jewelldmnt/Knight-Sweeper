@@ -523,13 +523,13 @@ def draw_golden_clues():
             return False
         # Check if position is in poisoned locations, golden apples locations, or horse location
         if player == 'red':
-            if pos in poisoned_locations or pos == (0, 0) or pos in green_locations:
+            if pos in poisoned_locations or pos == (0, 0) or pos in green_locations or pos in red_golden_clue_pos:
                 return False
             if pos in red_apple_values.keys():
                 if red_apple_values[pos] == 1:
                     return False
         else:
-            if pos in poisoned_locations or pos == (7, 7) or pos in red_locations:
+            if pos in poisoned_locations or pos == (7, 7) or pos in red_locations or pos in green_golden_clue_pos:
                 return False   
             if pos in green_apple_values.keys():
                 if green_apple_values[pos] == 1:
@@ -560,13 +560,17 @@ def draw_golden_clues():
         red_poisoned_adjacent_cells = possible_adjacent_locations(red_poison_locations, 'red')
         random_clue = random.choice(red_poisoned_adjacent_cells)
         red_golden_clue_pos.append(random_clue)
-        agent.update_clue_probabilities(random_clue)
+        if AI_color == 'green':
+            print("red to")
+            agent.update_clue_probabilities(random_clue)
     else:
         # Get adjacent cells for green poisoned apples
         green_poisoned_adjacent_cells = possible_adjacent_locations(green_poison_locations, 'green')
         random_clue = random.choice(green_poisoned_adjacent_cells)
         green_golden_clue_pos.append(random_clue)
-        agent.update_clue_probabilities(random_clue)
+        if AI_color == 'red':
+            print("green to")
+            agent.update_clue_probabilities(random_clue)
     
 def choose_color():
     """
