@@ -93,34 +93,55 @@ class MinimaxAgent(BayesianAgent):
     def __init__(self, player_color, apple_values, locations, clues_pos, my_poison_apples):
         super().__init__(player_color, apple_values, locations, clues_pos, my_poison_apples)
     
-    def minimax_action(self, valid_moves):
+    def minimax_action(self, valid_moves, depth=3):
         best_action = None
         best_value = -float('inf')
         
-        for cell in valid_moves:
-            x, y = cell
-                
-            # Calculate value for this action
-            value = self.calculate_value(cell)
-            
-            # Update best action if this one is better
+        for move in valid_moves:
+            value = self.minimax(move, depth, True)
             if value > best_value:
                 best_value = value
-                best_action = (x, y)
-        
+                best_action = move
+                
         return best_action
+    
+    def minimax(self, position, depth, is_maximizing):
+        if depth == 0 or self.is_terminal(position):
+            return self.calculate_value(position)
+        
+        if is_maximizing:
+            max_eval = -float('inf')
+            for move in self.get_valid_moves(position):
+                eval = self.minimax(move, depth - 1, False)
+                max_eval = max(max_eval, eval)
+            return max_eval
+        else:
+            min_eval = float('inf')
+            for move in self.get_valid_moves(position):
+                eval = self.minimax(move, depth - 1, True)
+                min_eval = min(min_eval, eval)
+            return min_eval
     
     def calculate_value(self, action):
         x, y = action
-        # Calculate value based on the probability of getting a poison and apple value
         probability = self.probabilities[y][x]
         apple_value = self.apple_values.get((x, y), 0)
-        
-        # Inverse probability (lower is better for poison) and apple value
-        value = 1.0 / (1.0 + probability) + apple_value
-        
+        value = apple_value - probability * 100  # Weigh poison heavily
         return value
-    
+
+    def is_terminal(self, position):
+        x, y = position
+        return self.probabilities[y][x] == 1  # Terminal if poison
+
+    def get_valid_moves(self, position):
+        x, y = position
+        possible_moves = [
+            (x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1),
+            (x + 1, y + 1), (x - 1, y - 1), (x + 1, y - 1), (x - 1, y + 1)
+        ]
+        valid_moves = [(px, py) for px, py in possible_moves if 0 <= px < self.grid_size and 0 <= py < self.grid_size]
+        return valid_moves
+
     
 # Example usage:
 if __name__ == '__main__':

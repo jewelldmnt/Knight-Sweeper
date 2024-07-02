@@ -558,11 +558,15 @@ def draw_golden_clues():
     if turn_step in (0,1):
         # Get adjacent cells for red poisoned apples
         red_poisoned_adjacent_cells = possible_adjacent_locations(red_poison_locations, 'red')
+        random_clue = random.choice(red_poisoned_adjacent_cells)
         red_golden_clue_pos.append(random.choice(red_poisoned_adjacent_cells))
+        agent.update_clue_probabilities(random_clue)
     else:
         # Get adjacent cells for green poisoned apples
         green_poisoned_adjacent_cells = possible_adjacent_locations(green_poison_locations, 'green')
-        green_golden_clue_pos.append(random.choice(green_poisoned_adjacent_cells))
+        random_clue = random.choice(green_poisoned_adjacent_cells)
+        green_golden_clue_pos.append(random_clue)
+        agent.update_clue_probabilities(random_clue)
     
 def choose_color():
     """
@@ -670,6 +674,12 @@ while run:
         valid_moves = check_valid_moves()
         if len(valid_moves) > 0:
             draw_valid(valid_moves)
+            if turn_step > 1:
+                filtered_moves = [move for move in valid_moves if move != AI_prev_move]
+                print("green")
+                best_move = agent.minimax_action(filtered_moves)
+                print(f"Best Move: {best_move}")
+            
         else:
             if turn_step in (2, 3) and len(red_locations) < 30:
                 winner = 'Green'
@@ -689,15 +699,14 @@ while run:
             x_coord = event.pos[0] // 100
             y_coord = event.pos[1] // 100
             click_coords = (x_coord, y_coord)
-
             
             # Red player's turn handling
             if turn_step <= 1:  
-                filtered_moves = [move for move in valid_moves if move != AI_prev_move]
-                if AI_color == 'red':
-                    click_coords = agent.minimax_action(filtered_moves)
-                    print(f"Clicked coords: {click_coords}")
-                    
+                # filtered_moves = [move for move in valid_moves if move != AI_prev_move]
+                # if AI_color == 'red':
+                #     click_coords = agent.minimax_action(filtered_moves)
+                #     print(f"Clicked coords: {click_coords}")
+                
                 if click_coords in red_locations:
                     selection = red_locations.index(click_coords)                  
                     if red_pieces[selection] == 'knight':  # Only allow selection if it's a knight
@@ -760,11 +769,10 @@ while run:
             # Green player's turn handling
             if turn_step > 1: 
                 filtered_moves = [move for move in valid_moves if move != AI_prev_move]
-                
-                # if AI_color == 'green':
-                    # print("green")
-                    # click_coords = agent.minimax_action(filtered_moves)
-                    # print(f"Clicked coords: {click_coords}")
+                # if AI_color == 'green': 
+                #     print("green")
+                #     best_move = agent.minimax_action(filtered_moves)
+                #     print(f"Best Move: {best_move}")
                     
                 if click_coords in green_locations:
                     selection = green_locations.index(click_coords)
@@ -838,7 +846,7 @@ while run:
         if not winner:
             sum_red_apple_values = sum(red_captured_values)
             sum_green_apple_values = sum(green_captured_values)
-            if sum_green_apple_values > sum_green_apple_values:
+            if sum_green_apple_values > sum_red_apple_values:
                 winner = 'Green' 
             else:
                 winner = 'Red'
