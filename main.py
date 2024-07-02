@@ -632,7 +632,7 @@ while run:
     draw_board()
     draw_pieces()
     draw_captured_values()
-    num_of_poisons = len(red_poison_locations) + len(green_poison_locations) + 1
+    num_of_poisons = len(red_poison_locations) + len(green_poison_locations)
 
     if not is_putting_poison_done:
         draw_poisoned_apples()
@@ -746,6 +746,8 @@ while run:
                     
                     red_locations[0] = click_coords
                     red_pieces[0] = 'knight'
+                    agent.update_probability(click_coords)
+                    agent.draw_possible_poison_locations(num_of_poisons)
                     if AI_color == 'red':
                         AI_prev_move = click_coords
                     
@@ -758,10 +760,11 @@ while run:
             # Green player's turn handling
             if turn_step > 1: 
                 filtered_moves = [move for move in valid_moves if move != AI_prev_move]
-                if AI_color == 'green':
-                    print("green")
-                    click_coords = agent.minimax_action(filtered_moves)
-                    print(f"Clicked coords: {click_coords}")
+                
+                # if AI_color == 'green':
+                    # print("green")
+                    # click_coords = agent.minimax_action(filtered_moves)
+                    # print(f"Clicked coords: {click_coords}")
                     
                 if click_coords in green_locations:
                     selection = green_locations.index(click_coords)
@@ -811,7 +814,9 @@ while run:
                         
                     round_counter += 1
                     green_locations[-1] = click_coords
-                    green_pieces[-1] = 'knight'   
+                    green_pieces[-1] = 'knight'
+                    agent.update_probability(click_coords)
+                    agent.draw_possible_poison_locations(num_of_poisons)
                     if AI_color == 'green':
                         AI_prev_move = click_coords
                             
