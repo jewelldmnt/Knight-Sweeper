@@ -515,21 +515,21 @@ def draw_golden_clues():
     None
     """
     global screen, red_poison_locations, green_poison_locations, red_apple_values, green_apple_values
-    
+
     def is_valid_position(pos, poisoned_locations, player):
         x, y = pos
         # Check if position is out of bounds (negative positions)
         if x < 0 or y < 0 or x > 7 or y > 7:
             return False
         # Check if position is in poisoned locations, golden apples locations, or horse location
-        if player == 'red':
-            if pos in poisoned_locations or pos == (0, 0) or pos in green_locations or pos in red_golden_clue_pos:
+        if player == 'green':
+            if pos in poisoned_locations or pos == (0, 0) or pos in green_locations or pos in red_golden_clue_pos or pos not in red_apple_values.keys():
                 return False
             if pos in red_apple_values.keys():
                 if red_apple_values[pos] == 1:
                     return False
         else:
-            if pos in poisoned_locations or pos == (7, 7) or pos in red_locations or pos in green_golden_clue_pos:
+            if pos in poisoned_locations or pos == (7, 7) or pos in red_locations or pos in green_golden_clue_pos or pos not in green_apple_values.keys():
                 return False   
             if pos in green_apple_values.keys():
                 if green_apple_values[pos] == 1:
@@ -546,30 +546,26 @@ def draw_golden_clues():
             for pos in adjacent_positions:
                 if is_valid_position(pos, poisoned_locations, player):
                     adj_cells_for_loc.append(pos)
-            adj_cells_for_loc.sort(key=lambda cell: len([c for c in adjacent_positions if is_valid_position(c, poisoned_locations, player)]))
-            adjacent_cells.append(adj_cells_for_loc)
-        
-        for cell in adjacent_cells[0]:
-            if cell in adjacent_cells[1]:
-                adjacent_cells[1].remove(cell)
-                
-        return list(set(adjacent_cells[0] + adjacent_cells[1]))
+            adjacent_cells += adj_cells_for_loc
+                            
+        return list(set(adjacent_cells))
     
-    if turn_step in (0,1):
+    if turn_step in (2,3): # red to move
         # Get adjacent cells for red poisoned apples
-        red_poisoned_adjacent_cells = possible_adjacent_locations(red_poison_locations, 'red')
-        random_clue = random.choice(red_poisoned_adjacent_cells)
+        adjacent_cells = possible_adjacent_locations(green_poison_locations, 'red')
+        random_clue = random.choice(adjacent_cells)
+        print(f"Clue position: {random_clue}")
         red_golden_clue_pos.append(random_clue)
-        if AI_color == 'green':
-            print("red to")
-            agent.update_clue_probabilities(random_clue)
-    else:
-        # Get adjacent cells for green poisoned apples
-        green_poisoned_adjacent_cells = possible_adjacent_locations(green_poison_locations, 'green')
-        random_clue = random.choice(green_poisoned_adjacent_cells)
-        green_golden_clue_pos.append(random_clue)
         if AI_color == 'red':
-            print("green to")
+            agent.update_clue_probabilities(random_clue)
+            
+    else: # green to move
+        # Get adjacent cells for green poisoned apples
+        adjacent_cells = possible_adjacent_locations(red_poison_locations, 'green')
+        random_clue = random.choice(adjacent_cells)
+        print(f"Clue position: {random_clue}")
+        green_golden_clue_pos.append(random_clue)
+        if AI_color == 'green':
             agent.update_clue_probabilities(random_clue)
     
 def choose_color():
@@ -706,6 +702,7 @@ while run:
             
             # Red player's turn handling
             if turn_step <= 1:  
+                print(f"Turn step: {turn_step}")
                 # filtered_moves = [move for move in valid_moves if move != AI_prev_move]
                 # if AI_color == 'red':
                 #     click_coords = agent.minimax_action(filtered_moves)
@@ -747,6 +744,7 @@ while run:
 
                         green_pieces.pop(green_piece_idx)
                         green_locations.pop(green_piece_idx)
+                        green_apple_values.pop(click_coords)
 
                     elif click_coords in red_locations:
                         red_piece_idx = red_locations.index(click_coords)
@@ -772,6 +770,7 @@ while run:
             
             # Green player's turn handling
             if turn_step > 1: 
+                print(f"Turn step: {turn_step}")
                 filtered_moves = [move for move in valid_moves if move != AI_prev_move]
                 # if AI_color == 'green': 
                 #     print("green")
@@ -813,7 +812,8 @@ while run:
                             is_golden_eaten = True
                         
                         red_pieces.pop(red_piece_idx)
-                        red_locations.pop(red_piece_idx)                      
+                        red_locations.pop(red_piece_idx)         
+                        red_apple_values.pop(click_coords)             
                         
                     elif click_coords in green_locations:
                         green_piece_idx = green_locations.index(click_coords)
