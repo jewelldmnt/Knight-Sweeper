@@ -31,26 +31,18 @@ class BayesianAgent:
         
         if self.player_color == 'green':
             adjacent_cells = [(px, py) for px, py in adjacent_cells if 0 <= px <= 3  and 0 <= py < self.grid_size and (px, py)]
-            print(f'Adjacent cells: {adjacent_cells}')
-            denom = len(adjacent_cells)
-            numerator = len(set(adjacent_cells).difference(set(self.sure_not_poison)))
-            possible_poison = set(adjacent_cells).difference(set(self.sure_not_poison))
-            probability = 1/numerator
-
-            for cell in possible_poison:
-                i, j = cell
-                self.probabilities[j][i] += probability
                 
         else: # red player that is finding the green poison location
             adjacent_cells = [(px, py) for px, py in adjacent_cells if 4 <= px <= 7  and 0 <= py < self.grid_size and (px, py)]
-            denom = len(adjacent_cells)
-            numerator = len(set(adjacent_cells).difference(set(self.sure_not_poison)))
-            possible_poison = set(adjacent_cells).difference(set(self.sure_not_poison))
-            probability = 1/numerator
-            
-            for cell in possible_poison:
-                i, j = cell
-                self.probabilities[j][i] += probability
+
+        print(f'Adjacent cells: {adjacent_cells}')
+        possible_poison = set(adjacent_cells).difference(set(self.sure_not_poison))
+        num_of_possible_poison = len(possible_poison)
+        probability = 1/num_of_possible_poison
+
+        for cell in possible_poison:
+            i, j = cell
+            self.probabilities[j][i] += probability
                     
         print(f"Possible poison location: {possible_poison}")
         print("Probabilities")
@@ -60,7 +52,7 @@ class BayesianAgent:
     
     def update_probability(self, revealed_apple_location):
         x, y = revealed_apple_location
-        self.probabilities[x][y] = 0.0
+        self.probabilities[y][x] = 0.0
         self.sure_not_poison.append(revealed_apple_location)
         adjacent_cells = [
             (x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1),
@@ -81,20 +73,19 @@ class BayesianAgent:
         print(df)
 
 
-    def draw_possible_poison_locations(self, num_of_poison):
+    def draw_possible_poison_locations(self, num_of_poisons):
         # Create a grid to visualize possible poison locations
         grid_with_poison = np.zeros((self.grid_size, self.grid_size))
         
         # Get indices of the top 4 highest probabilities
         flat_probs = np.array(self.probabilities).flatten()
-        top_indices = np.argpartition(flat_probs, -num_of_poison)[-num_of_poison:]
+        top_indices = np.argpartition(flat_probs, -num_of_poisons)[-num_of_poisons:]
 
         # Set the top 4 probabilities to 1 in the grid
         for idx in top_indices:
             x, y = np.unravel_index(idx, self.probabilities.shape)
             grid_with_poison[x, y] = 1
         
-        print("Grid with Possible Poison Locations (Top 4 Probabilities):")
         print(grid_with_poison)
 
 
