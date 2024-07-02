@@ -1,0 +1,43 @@
+red_pieces = ['knight', 'apple', 'apple', 'apple', 'poison', 'golden' ...] up to 32 pieces
+    - List of all red pieces
+
+
+red_locations = [(0,0), (1,0), (2,0), (3,0),
+                 (0,1), (1,1), (2,1), (3,1),
+                 (0,2), (1,2), (2,2), (3,2),
+                 (0,3), (1,3), (2,3), (3,3),
+                 (0,4), (1,4), (2,4), (3,4),
+                 (0,5), (1,5), (2,5), (3,5),
+                 (0,6), (1,6), (2,6), (3,6),
+                 (0,7), (1,7), (2,7), (3,7)]
+    - List of tuples. Tuples are the position of the red_pieces in the board relatively (x, y). 
+    - For example: red_pieces[0] is in the red_locations[0] = 'knight' is in the (0, 0)
+
+
+red_apples_locations = red_locations[1:]
+    - List of the location of the red apples, including the poison and golden apple but excluding the knight 
+
+
+red_captured_values = [1, 2, 3, 4]
+    - List of the captured values 
+
+
+red_apple_values = {(1, 0): 1, (2, 0): 2 ... up to 31 since there are 31 apples}
+    - Dictionary where the key are the apple location and the values are the apple value 
+
+
+red_poison_locations = [(2, 3), (5, 4), (1,3), (4,4)] 
+    - List of the poison's location 
+
+
+red_golden_locations = [(2, 3), (5, 4), (1,3), (4,4)] 
+    - List of the golden apples' location 
+
+
+
+        self.red_poison_locations = [(2, 2), (1, 4), (3, 4), (1, 7)]  # Example initial positions of red poisons
+        self.green_poison_locations = [(4, 4), (6, 4), (6, 5), (5, 6)]  # Example initial positions of green poisons
+
+
+
+

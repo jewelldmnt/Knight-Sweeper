@@ -1,0 +1,4 @@
+valid_moves = [(0,2), (1,3)]
+
+
+print(valid_moves - [(0, 0)])

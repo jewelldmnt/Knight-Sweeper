@@ -36,7 +36,7 @@ class BayesianAgent:
             numerator = len(set(adjacent_cells).difference(set(self.sure_not_poison)))
             possible_poison = set(adjacent_cells).difference(set(self.sure_not_poison))
             probability = 1/numerator
-
+    
             for cell in possible_poison:
                 i, j = cell
                 self.probabilities[j][i] += probability
