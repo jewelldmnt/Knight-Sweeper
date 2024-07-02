@@ -57,22 +57,6 @@ green_golden_locations = []
 
 
 board = Board(WIDTH, HEIGHT)
-apple_scale = (50, 50)
-knight_scale = (80, 80)
-
-# Load and scale all game pieces
-red_apple = board.load_image('assets/red_apple.png', apple_scale)
-red_knight = board.load_image('assets/red_knight.png', knight_scale)
-green_knight = board.load_image('assets/green_knight.png', knight_scale)
-green_apple = board.load_image('assets/green_apple.png', apple_scale)
-red_poisoned_apple = board.load_image('assets/red_poisoned_apple.png', apple_scale)
-green_poisoned_apple = board.load_image('assets/green_poisoned_apple.png', apple_scale)
-gold_apple = board.load_image('assets/gold_apple.png', apple_scale)
-
-# Organize images into lists
-red_images = [red_knight, red_apple, red_poisoned_apple, gold_apple]
-green_images = [green_knight, green_apple, green_poisoned_apple, gold_apple]
-piece_list = ['knight', 'apple', 'poison', 'golden']
 
 player = 0 # 0  - human player 1 - AI agent
 player = Player()  
@@ -82,22 +66,26 @@ AI_prev_move = (0,0) if human_agent == 'dark green' else (7,7)
 red_golden_locations, red_pieces = board.draw_golden_apples(red_apples_locations, red_pieces)
 green_golden_locations, green_pieces = board.draw_golden_apples(green_apples_locations, green_pieces)
 
-print(f'Red golden locations: {red_golden_locations}')
-print(f'Red pieces: {red_pieces}')
-print(f'Green golden locations: {green_golden_locations}')
-print(f'Green pieces: {green_pieces}')
-
 # Determine initial options for each play
 green_options = player.check_options(green_pieces, green_locations, 'green')
 red_options = player.check_options(red_pieces, red_locations, 'red')
+
 
 running = True
 while running:
     timer.tick(FPS)
     board.screen.fill('light gray')
-    board.draw_board(turn_step, count_red_shield, count_green_shield)
-    board.draw_pieces()
-    board.draw_captured_values()
+    board.draw_board(turn_step, count_red_shield, count_green_shield, red_golden_clue_pos, green_golden_clue_pos)
+    board.draw_pieces('red', red_locations, red_pieces, red_apple_values, turn_step, selection)
+    board.draw_pieces('green', green_locations, green_pieces, green_apple_values, turn_step, selection)
+    board.draw_captured_values(red_captured_values, green_captured_values, round_counter)
     
+    num_of_poisons = len(red_poison_locations) + len(green_poison_locations) + 1
+
+    if not board.is_putting_poison_done:
+        board.draw_poisoned_apples()
+
+    
+
     pygame.display.flip()
 pygame.quit()

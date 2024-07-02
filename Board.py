@@ -11,6 +11,22 @@ class Board:
         self.is_putting_poison_done = False
         self.turn_step_putting_poison = 0
 
+        apple_scale = (50, 50)
+        knight_scale = (80, 80)
+        # Load and scale all game pieces
+        self.red_apple = self.load_image('assets/red_apple.png', apple_scale)
+        self.red_knight = self.load_image('assets/red_knight.png', knight_scale)
+        self.green_knight = self.load_image('assets/green_knight.png', knight_scale)
+        self.green_apple = self.load_image('assets/green_apple.png', apple_scale)
+        self.red_poisoned_apple = self.load_image('assets/red_poisoned_apple.png', apple_scale)
+        self.green_poisoned_apple = self.load_image('assets/green_poisoned_apple.png', apple_scale)
+        self.gold_apple = self.load_image('assets/gold_apple.png', apple_scale)
+
+        # Organize images into lists
+        self.red_images = [self.red_knight, self.red_apple, self.red_poisoned_apple, self.gold_apple]
+        self.green_images = [self.green_knight, self.green_apple, self.green_poisoned_apple, self.gold_apple]
+        self.piece_list = ['knight', 'apple', 'poison', 'golden']
+    
     def load_image(self, path, scale):
         image = pygame.image.load(path)
         return pygame.transform.scale(image, scale)
@@ -112,7 +128,7 @@ class Board:
                         return colors[1]
 
 
-    def draw_board(self, turn_step, count_red_shield, count_green_shield):
+    def draw_board(self, turn_step, count_red_shield, count_green_shield, red_golden_clue_pos, green_golden_clue_pos):
         """
         Draws the main game board, including grid lines, status text, and board borders.
 
@@ -151,56 +167,99 @@ class Board:
         # Loop through red golden clue positions and draw blue highlight
         for pos in red_golden_clue_pos:
             x, y = pos
-            pygame.draw.rect(screen, 'dark gray', (x * 100 + 1, y * 100 + 1, 98, 98))
+            pygame.draw.rect(self.screen, 'dark gray', (x * 100 + 1, y * 100 + 1, 98, 98))
         
         # Loop through green golden clue positions and draw blue highlight
         for pos in green_golden_clue_pos:
             x, y = pos
-            pygame.draw.rect(screen, 'dark gray', (x * 100 + 1, y * 100 + 1, 98, 98))
+            pygame.draw.rect(self.screen, 'dark gray', (x * 100 + 1, y * 100 + 1, 98, 98))
             
-    def draw_pieces(self):
-        self.draw_color_pieces('red', self.red_locations)
-        self.draw_color_pieces('green', self.green_locations)
-
-    def draw_color_pieces(self, color, locations):
-        for location in locations:
-            rect = pygame.Rect(100 * location[0], 100 * location[1], 100, 100)
-            pygame.draw.rect(self.screen, 'black', rect, 3)
-            pygame.draw.rect(self.screen, 'gold', rect, 5)
-
-            x_offset = 25 if color == 'red' else 0
-            y_offset = 10
-            pieces = self.red_pieces if color == 'red' else self.green_pieces
-            piece = pieces[locations.index(location)]
-            image = self.get_piece_image(color, piece)
-            self.screen.blit(image, (100 * location[0] + x_offset, 100 * location[1] + y_offset))
-
-    def get_piece_image(self, color, piece):
-        if color == 'red':
-            if piece == 'knight':
-                return self.red_images[0]
-            elif piece == 'apple':
-                return self.red_images[1]
-            elif piece == 'poison':
-                return self.red_images[2]
-            elif piece == 'golden':
-                return self.red_images[3]
+    def draw_pieces(self, player, locations, pieces, apple_values, turn_step, selection):
+        piece_list = ['knight', 'apple', 'poison', 'golden']
+        if player == 'red':
+            for i in range(len(pieces)):
+                index = piece_list.index(pieces[i])
+                x, y = locations[i]
+                if pieces[i] == 'knight':
+                    self.screen.blit(self.red_images[index], (x * 100 + 10, y * 100 + 10))
+                else:
+                    self.screen.blit(self.red_images[index], (x * 100 + 22, y * 100 + 30))
+                    value = apple_values.get((x, y), 0)
+                    self.screen.blit(self.font.render(str(value), True, 'white'), (x * 100 + 40, y * 100 + 40))
+                if turn_step < 2 and selection == i and pieces[i] == 'knight':
+                    pygame.draw.rect(self.screen, 'yellow', [locations[i][0] * 100 + 1, locations[i][1] * 100 + 1, 
+                                    100, 100], 2)
         else:
-            if piece == 'knight':
-                return self.green_images[0]
-            elif piece == 'apple':
-                return self.green_images[1]
-            elif piece == 'poison':
-                return self.green_images[2]
-            elif piece == 'golden':
-                return self.green_images[3]
+            for i in range(len(pieces)):
+                index = piece_list.index(pieces[i])
+                x, y = locations[i]
+                if pieces[i] == 'knight':
+                    self.screen.blit(self.green_images[index], (x * 100 + 10, y * 100 + 10))
+                else:
+                    self.screen.blit(self.green_images[index], (x * 100 + 22, y * 100 + 30))
+                    value = apple_values.get((x, y), 0)
+                    self.screen.blit(self.font.render(str(value), True, 'white'), (x * 100 + 40, y * 100 + 40))
+                if turn_step >= 2 and selection == i and pieces[i] == 'knight':
+                    pygame.draw.rect(self.screen, 'green', [locations[i][0] * 100 + 1, locations[i][1] * 100 + 1, 
+                                    100, 100], 5)
 
-    def draw_captured_values(self):
-        pass
+    def draw_captured_values(self, red_captured_values, green_captured_values, round_counter):
+        """
+        Calculates and displays the total values of captured apples for the current player on the right side of the screen.
 
-    def draw_poisoned_apples(self):
-        pass
+        Parameters:
+        None
 
+        Returns:
+        None
+        """
+
+        red_score = sum(red_captured_values)        
+        green_score = sum(green_captured_values)
+        
+        score_text = f"Round: {round_counter} \nScores:\nred = {red_score}\ngreen = {green_score}"
+        
+        lines = score_text.split('\n')
+        y_offset = 20
+        for line in lines:
+            self.screen.blit(self.font.render(line, True, 'black'), (820, y_offset))
+            y_offset += 60
+            pass
+
+    def draw_poisoned_apples(self, locations, poison_location):
+        """
+        Allows players to place poisoned apples on the board during the initial setup phase.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+        """
+        
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                x_coord = event.pos[0] // 100
+                y_coord = event.pos[1] // 100
+                click_coords = (x_coord, y_coord)
+            
+                # red to put poison
+                if turn_step_putting_poison == 0 and click_coords in locations and click_coords != (0, 0) and click_coords not in red_golden_locations and click_coords not in red_poison_locations:
+                    red_poison_locations.append(click_coords)
+                    red_piece_index = locations.index(click_coords)
+                    red_pieces[red_piece_index] = 'poison'
+                    
+                    if len(red_poison_locations) == 4:
+                        turn_step_putting_poison = 1
+                        
+                elif turn_step_putting_poison == 1 and click_coords in green_locations and click_coords != (7, 7) and click_coords not in green_golden_locations and click_coords not in green_poison_locations:
+                    green_poison_locations.append(click_coords)
+                    green_piece_index = green_locations.index(click_coords)
+                    green_pieces[green_piece_index] = 'poison'
+                    
+                    if len(green_poison_locations) == 4:
+                        is_putting_poison_done = True
+                        can_add_values = True
 
 
     def draw_golden_clues(self):

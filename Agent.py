@@ -33,9 +33,9 @@ class BayesianAgent:
             adjacent_cells = [(px, py) for px, py in adjacent_cells if 0 <= px <= 3  and 0 <= py < self.grid_size and (px, py)]
             print(f'Adjacent cells: {adjacent_cells}')
             denom = len(adjacent_cells)
-            numerator = len(set(adjacent_cells).difference(set(self.sure_not_poison)))
             possible_poison = set(adjacent_cells).difference(set(self.sure_not_poison))
-            probability = 1/numerator
+            num_possible_poison = len(possible_poison)
+            probability = 1/num_possible_poison
     
             for cell in possible_poison:
                 i, j = cell
