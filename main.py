@@ -559,7 +559,7 @@ def draw_golden_clues():
         # Get adjacent cells for red poisoned apples
         red_poisoned_adjacent_cells = possible_adjacent_locations(red_poison_locations, 'red')
         random_clue = random.choice(red_poisoned_adjacent_cells)
-        red_golden_clue_pos.append(random.choice(red_poisoned_adjacent_cells))
+        red_golden_clue_pos.append(random_clue)
         agent.update_clue_probabilities(random_clue)
     else:
         # Get adjacent cells for green poisoned apples
