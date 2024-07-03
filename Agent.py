@@ -95,7 +95,6 @@ class BayesianAgent:
 class MinimaxAgent(BayesianAgent):
     def __init__(self, player_color, apple_values, locations, clues_pos, my_poison_apples):
         super().__init__(player_color, apple_values, locations, clues_pos, my_poison_apples)
-        #self.opponent_knight_positions = opponent_knight_positions
     
     def minimax_action(self, valid_moves, depth=3):
         best_action = None
@@ -136,21 +135,13 @@ class MinimaxAgent(BayesianAgent):
     def calculate_value(self, action):
         x, y = action
 
-        # Check if the move can capture the opponent's knight
-        #if action in self.opponent_knight_positions:
-        #   return float('inf')  # Maximum value for winning
-
-        # Check if the move puts the agent in danger of being captured by the opponent's knight
-        #opponent_moves = self.get_knight_moves(self.opponent_knight_positions)
-        #if action in opponent_moves:
-        #    return -float('inf')  # Minimum value for losing
-
         # Calculate the value of the move considering the apple points and poison probability
         probability = self.probabilities[y][x]
         apple_value = self.apple_values.get((x, y), 0)
 
         # Adjust value based on the side of the board
-        if (self.player_color == 'green' and x < 4) or (self.player_color == 'red' and x >= 4):
+        # Green player's side is columns 4-7, Red player's side is columns 0-3
+        if (self.player_color == 'green' and x >= 4) or (self.player_color == 'red' and x < 4):
             apple_value *= 0.5  # Lower priority for own side apples
 
         # Further lower the value for apples with a probability greater than 0
@@ -174,7 +165,6 @@ class MinimaxAgent(BayesianAgent):
         ]
         valid_moves = [(px, py) for px, py in possible_moves if 0 <= px < self.grid_size and 0 <= py < self.grid_size]
         return valid_moves
-
     
 # Example usage:
 if __name__ == '__main__':
@@ -183,7 +173,7 @@ if __name__ == '__main__':
     red_locations = [(x, y) for y in range(8) for x in range(4)]
     red_apple_clues_pos = [pos for pos, val in red_apple_values.items() if val == 1]
 
-    green_poison_locations = [(4, 4), (6, 4), (3, 5), (5, 6)]  # Example initial positions of green poisons
+    green_poison_locations = [(4, 4), (6, 4), (4, 5), (5, 6)]  # Example initial positions of green poisons
     green_apple_values = {(5, 4): 1, (7, 5): 1, (5, 5): 1, (6, 7): 1, (4, 0): 3, (5, 0): 3, (6, 0): 2, (7, 0): 7, (4, 1): 5, (5, 1): 6, (6, 1): 3, (7, 1): 9, (4, 2): 3, (5, 2): 7, (6, 2): 9, (7, 2): 3, (4, 3): 6, (5, 3): 6, (6, 3): 8, (7, 3): 2, (4, 4): 3, (6, 4): 8, (7, 4): 2, (4, 5): 6, (6, 5): 7, (4, 6): 7, (5, 6): 9, (6, 6): 8, (7, 6): 7, (4, 7): 3, (5, 7): 3}
     green_locations = [(x, y) for y in range(8) for x in range(4, 8)]
     green_apple_clues_pos = [pos for pos, val in green_apple_values.items() if val == 1]
