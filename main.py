@@ -245,6 +245,11 @@ def draw_pieces():
     Returns:
     None
     """
+    global red_images, green_images
+    if AI_color == 'red':
+        red_images = [red_knight, red_apple, red_apple, red_apple]
+    else:
+        green_images = [green_knight, green_apple, green_apple, green_apple]
     for i in range(len(red_pieces)):
         index = piece_list.index(red_pieces[i])
         x, y = red_locations[i]
@@ -297,6 +302,17 @@ def draw_golden_apples():
         green_golden_index = green_locations.index(green_golden_locations[i])
         green_pieces[green_golden_index] = 'golden'
 
+
+def place_random_poison_apples(color, locations, golden_locations, poison_locations):
+    """Place 4 random poison apples for AI."""
+    placed_locations = []
+    while len(placed_locations) < 4:
+        random_coords = random.choice(locations)
+        if color == 'red' and random_coords in locations and random_coords != (0, 0) and random_coords not in poison_locations and random_coords not in golden_locations:
+            placed_locations.append(random_coords)
+        if color == 'green' and random_coords in locations and random_coords != (7, 7) and random_coords not in poison_locations and random_coords not in golden_locations:
+            placed_locations.append(random_coords)
+    return placed_locations
         
 
 def draw_poisoned_apples():
@@ -316,26 +332,47 @@ def draw_poisoned_apples():
             x_coord = event.pos[0] // 100
             y_coord = event.pos[1] // 100
             click_coords = (x_coord, y_coord)
-        
             # red to put poison
-            if turn_step_putting_poison == 0 and click_coords in red_locations and click_coords != (0, 0) and click_coords not in red_golden_locations and click_coords not in red_poison_locations:
-                red_poison_locations.append(click_coords)
-                red_piece_index = red_locations.index(click_coords)
-                red_pieces[red_piece_index] = 'poison'
-                
-                if len(red_poison_locations) == 4:
-                    turn_step_putting_poison = 1
+            if turn_step_putting_poison == 0:
+                # red human player to put poison
+                if AI_color == 'green' and click_coords in red_locations and click_coords != (0, 0) and click_coords not in red_golden_locations and click_coords not in red_poison_locations:
+                    red_poison_locations.append(click_coords)
+                    red_piece_index = red_locations.index(click_coords)
+                    red_pieces[red_piece_index] = 'poison'
                     
-            elif turn_step_putting_poison == 1 and click_coords in green_locations and click_coords != (7, 7) and click_coords not in green_golden_locations and click_coords not in green_poison_locations:
-                green_poison_locations.append(click_coords)
-                green_piece_index = green_locations.index(click_coords)
-                green_pieces[green_piece_index] = 'poison'
+                else: # this is AI player
+                    ai_poison_locations = place_random_poison_apples(
+                        'red', red_locations, red_golden_locations, red_poison_locations
+                    )
+                    red_poison_locations.extend(ai_poison_locations)
+                    for loc in ai_poison_locations:
+                        red_piece_index = red_locations.index(loc)
+                        red_pieces[red_piece_index] = 'poison'
+                        print(f'red_pieces[red_piece_index] = {red_pieces[red_piece_index]}')
+                        
+                if len(red_poison_locations) == 4:
+                        turn_step_putting_poison = 1
+            
+            elif turn_step_putting_poison == 1:
+                if AI_color == 'red' and click_coords in green_locations and click_coords != (7, 7) and click_coords not in green_golden_locations and click_coords not in green_poison_locations:
+                    green_poison_locations.append(click_coords)
+                    green_piece_index = green_locations.index(click_coords)
+                    green_pieces[green_piece_index] = 'poison'
                 
+                else: # this is AI player
+                    ai_poison_locations = place_random_poison_apples(
+                        'green', green_locations, green_golden_locations, green_poison_locations
+                    )
+                    green_poison_locations.extend(ai_poison_locations)
+                    for loc in ai_poison_locations:
+                        green_piece_index = green_locations.index(loc)
+                        green_pieces[green_piece_index] = 'poison'
+                        print(f'green_pieces[green_piece_index] = {green_pieces[green_piece_index]}')
+                    print(f'len of poison locations: {len(green_poison_locations)}')
                 if len(green_poison_locations) == 4:
                     is_putting_poison_done = True
                     can_add_values = True
-
-
+                
 
 # check valid knight moves
 def check_knight(position, color):
