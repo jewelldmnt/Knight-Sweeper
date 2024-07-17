@@ -95,8 +95,8 @@ class BayesianAgent:
 
 class MinimaxAgent(BayesianAgent):
     def __init__(self, player_color, apple_values, locations, clues_pos, my_poison_apples, player_knight_position=None):
-        # self.player_knight_position = player_knight_position
-        super().__init__(player_color, apple_values, locations, clues_pos, my_poison_apples, player_knight_position=None)
+        self.player_knight_position = player_knight_position
+        super().__init__(player_color, apple_values, locations, clues_pos, my_poison_apples)
     
     def update_player_knight_position(self, new_position):
         self.player_knight_position = new_position
@@ -146,13 +146,15 @@ class MinimaxAgent(BayesianAgent):
         apple_value = self.apple_values.get((x, y), 0)
 
         # Adjust value based on the side of the board
-        # Green player's side is columns 4-7, Red player's side is columns 0-3
-        if (self.player_color == 'green' and x >= 4) or (self.player_color == 'red' and x < 4):
-            apple_value *= 0.5  # Lower priority for own side apples
+        if (self.player_color == 'green' and x < 4) or (self.player_color == 'red' and x >= 4):
+            own_color_apple = ((self.player_color == 'green' and apple_value > 0) or 
+                               (self.player_color == 'red' and apple_value < 0))
+            if own_color_apple:
+                apple_value *= 0.1  # Lower priority for own side apples when on opponent's side
 
-        # Further lower the value for apples with a probability greater than 0
-        if probability > 0:
-            apple_value *= 0.1  # Assign lowest priority
+        # # Further lower the value for apples with a probability greater than 0
+        # if probability > 0:
+        #     apple_value *= 0.1  # Assign lowest priority
 
         value = apple_value - probability * 100  # Weigh poison heavily
 
