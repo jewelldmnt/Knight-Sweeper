@@ -2,13 +2,14 @@ import numpy as np
 import pandas as pd
 
 class BayesianAgent:
-    def __init__(self, player_color, opp_apple_values, locations, clues_pos, my_poison_apples):
+    def __init__(self, player_color, opp_apple_values, locations, clues_pos, my_poison_apples, player_knight_position=None):
         self.player_color = player_color
         self.apple_values = opp_apple_values
         self.clues_pos = clues_pos 
         self.locations = set(locations)
         self.my_poison_apples = my_poison_apples
         self.grid_size = 8  # Assuming an 8x8 grid
+        self.player_knight_position = player_knight_position
 
         # Initialize probabilities uniformly (no information initially)
         self.probabilities = np.zeros((self.grid_size, self.grid_size))
@@ -21,7 +22,7 @@ class BayesianAgent:
 
 
     def update_clue_probabilities(self, revealed_apple_location):
-        print(f"revealed location: {revealed_apple_location}")
+        # print(f"revealed location: {revealed_apple_location}")
         x, y = revealed_apple_location
         self.probabilities[x][y] = 0.0
         adjacent_cells = [
@@ -35,7 +36,7 @@ class BayesianAgent:
         else: # red player that is finding the green poison location
             adjacent_cells = [(px, py) for px, py in adjacent_cells if 4 <= px <= 7  and 0 <= py < self.grid_size and (px, py)]
 
-        print(f'Adjacent cells: {adjacent_cells}')
+        # print(f'Adjacent cells: {adjacent_cells}')
         possible_poison = set(adjacent_cells).difference(set(self.sure_not_poison))
         num_of_possible_poison = len(possible_poison)
         if num_of_possible_poison == 0:
@@ -47,10 +48,10 @@ class BayesianAgent:
             i, j = cell
             self.probabilities[j][i] += probability
                     
-        print(f"Possible poison location: {possible_poison}")
-        print("Probabilities")
+        # print(f"Possible poison location: {possible_poison}")
+        # print("Probabilities")
         df = pd.DataFrame(self.probabilities)
-        print(df)
+        # print(df)
 
     
     def update_probability(self, revealed_apple_location):
@@ -73,7 +74,7 @@ class BayesianAgent:
             adjacent_cells = [(px, py) for px, py in adjacent_cells if 4 <= px <= 7  and 0 <= py < self.grid_size and (px, py)]
               
         df = pd.DataFrame(self.probabilities)
-        print(df)
+        # print(df)
 
 
     def draw_possible_poison_locations(self, num_of_poisons):
@@ -89,13 +90,18 @@ class BayesianAgent:
             x, y = np.unravel_index(idx, self.probabilities.shape)
             grid_with_poison[x, y] = 1
         
-        print(grid_with_poison)
+        # print(grid_with_poison)
 
 
 class MinimaxAgent(BayesianAgent):
-    def __init__(self, player_color, apple_values, locations, clues_pos, my_poison_apples):
-        super().__init__(player_color, apple_values, locations, clues_pos, my_poison_apples)
+    def __init__(self, player_color, apple_values, locations, clues_pos, my_poison_apples, player_knight_position=None):
+        # self.player_knight_position = player_knight_position
+        super().__init__(player_color, apple_values, locations, clues_pos, my_poison_apples, player_knight_position=None)
     
+    def update_player_knight_position(self, new_position):
+        self.player_knight_position = new_position
+        print(f"Player Knight Position: {self.player_knight_position}")
+
     def minimax_action(self, valid_moves, depth=3):
         best_action = None
         best_value = -float('inf')
@@ -150,6 +156,16 @@ class MinimaxAgent(BayesianAgent):
 
         value = apple_value - probability * 100  # Weigh poison heavily
 
+        # Check if the human player can jump to this position
+        if self.player_knight_position:
+            opp_x, opp_y = self.player_knight_position
+            possible_opp_moves = [
+                (opp_x + 2, opp_y + 1), (opp_x + 1, opp_y + 2), (opp_x + 2, opp_y - 1), (opp_x + 1, opp_y - 2),
+                (opp_x - 2, opp_y + 1), (opp_x - 1, opp_y + 2), (opp_x - 2, opp_y - 1), (opp_x - 1, opp_y - 2)
+            ]
+            if (x, y) in possible_opp_moves:
+                value *= 0.1  # Lower the value significantly if the human player can move to this position
+
         return value
 
 
@@ -165,6 +181,7 @@ class MinimaxAgent(BayesianAgent):
         ]
         valid_moves = [(px, py) for px, py in possible_moves if 0 <= px < self.grid_size and 0 <= py < self.grid_size]
         return valid_moves
+
     
 # Example usage:
 if __name__ == '__main__':

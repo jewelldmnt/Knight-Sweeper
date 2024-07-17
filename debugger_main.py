@@ -642,23 +642,23 @@ def choose_color():
                     pygame.draw.rect(screen, colors[0], card1_button)
                     pygame.display.flip()
                     pygame.time.wait(1000)  # Optional delay before returning color
-                    return colors[0]
+                    return 'red'
                 elif card2_button.collidepoint(mouse_pos):
                     # Flip card 2 to reveal true color
                     pygame.draw.rect(screen, colors[1], card2_button)
                     pygame.display.flip()
                     pygame.time.wait(1000)  # Optional delay before returning color
-                    return colors[1]
+                    return 'green'
 
 
 ##########################################################################
 # MAIN LOOP
 ##########################################################################
 # human_agent = choose_color()
-human_agent = 'dark red'
-AI_color = 'red' if human_agent == 'dark green' else 'green'
+human_color = 'red'
+AI_color = 'red' if human_color == 'green' else 'green'
 player = 0 # 0  - human player 1 - AI agent
-AI_prev_move = (0,0) if human_agent == 'dark green' else (7,7)
+AI_prev_move = (0,0) if human_color == 'green' else (7,7)
 draw_golden_apples()
 
 # Determine initial options for each player
@@ -681,7 +681,7 @@ while run:
     if can_add_values:
         add_apple_values() 
         can_add_values = False
-        if human_agent == 'dark green':
+        if human_color == 'dark green':
             green_apple_clues_pos = [pos for pos, val in green_apple_values.items() if val == 1]
             agent = MinimaxAgent('red', green_apple_values, green_locations, green_apple_clues_pos, red_poison_locations)
             player = 1
@@ -742,7 +742,7 @@ while run:
             
             # Red player's turn handling
             if turn_step <= 1:  
-                print(f"Turn step: {turn_step}")
+                # print(f"Turn step: {turn_step}")
                 # if AI_color == 'red': 
                 #     if turn_step == 0:
                 #         click_coords = red_locations[0]
@@ -803,6 +803,9 @@ while run:
                     if AI_color == 'red':
                         AI_prev_move = click_coords
                     
+                    if human_color == 'red':
+                        agent.update_player_knight_position(click_coords)
+                    
                     green_options = check_options(green_pieces, green_locations, 'green')
                     red_options = check_options(red_pieces, red_locations, 'red')
                     turn_step = 2
@@ -811,7 +814,7 @@ while run:
             
             # Green player's turn handling
             if turn_step > 1: 
-                print(f"Turn step: {turn_step}")
+                # print(f"Turn step: {turn_step}")
                 filtered_moves = [move for move in valid_moves if move != AI_prev_move]
                 # if AI_color == 'green': 
                 #     if turn_step == 2:
@@ -873,7 +876,10 @@ while run:
                     agent.draw_possible_poison_locations(num_of_poisons)
                     if AI_color == 'green':
                         AI_prev_move = click_coords
-                            
+                        
+                    if human_color == 'green':
+                        agent.update_player_knight_position(click_coords)
+                        
                     green_options = check_options(green_pieces, green_locations, 'green')
                     red_options = check_options(red_pieces, red_locations, 'red')
                     turn_step = 0
