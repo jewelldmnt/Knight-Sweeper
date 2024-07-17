@@ -308,9 +308,9 @@ def place_random_poison_apples(color, locations, golden_locations, poison_locati
     placed_locations = []
     while len(placed_locations) < 4:
         random_coords = random.choice(locations)
-        if color == 'red' and random_coords in locations and random_coords != (0, 0) and random_coords not in poison_locations and random_coords not in golden_locations:
+        if color == 'red' and random_coords in locations and random_coords not in [(0,0), (2,1), (1,2)] and random_coords not in poison_locations and random_coords not in golden_locations:
             placed_locations.append(random_coords)
-        if color == 'green' and random_coords in locations and random_coords != (7, 7) and random_coords not in poison_locations and random_coords not in golden_locations:
+        if color == 'green' and random_coords in locations and random_coords not in [(7,7), (5,6), (6,5)] and random_coords not in poison_locations and random_coords not in golden_locations:
             placed_locations.append(random_coords)
     return placed_locations
         
@@ -655,7 +655,7 @@ def choose_color():
 ##########################################################################
 # MAIN LOOP
 ##########################################################################
-human_agent = 'dark red'
+human_agent = choose_color()
 AI_color = 'red' if human_agent == 'dark green' else 'green'
 player = 0 # 0  - human player 1 - AI agent
 AI_prev_move = (0,0) if human_agent == 'dark green' else (7,7)
@@ -711,9 +711,12 @@ while run:
         valid_moves = check_valid_moves()
         if len(valid_moves) > 0:
             draw_valid(valid_moves)
-            if turn_step > 1:
+            if AI_color == 'green' and turn_step > 1:
                 filtered_moves = [move for move in valid_moves if move != AI_prev_move]
-                print("green")
+                best_move = agent.minimax_action(filtered_moves)
+                print(f"Best Move: {best_move}")
+            else:
+                filtered_moves = [move for move in valid_moves if move != AI_prev_move]
                 best_move = agent.minimax_action(filtered_moves)
                 print(f"Best Move: {best_move}")
             
@@ -740,11 +743,12 @@ while run:
             # Red player's turn handling
             if turn_step <= 1:  
                 print(f"Turn step: {turn_step}")
-                # filtered_moves = [move for move in valid_moves if move != AI_prev_move]
-                # if AI_color == 'red':
-                #     click_coords = agent.minimax_action(filtered_moves)
-                #     print(f"Clicked coords: {click_coords}")
-                
+                if AI_color == 'red': 
+                    if turn_step == 0:
+                        click_coords = red_locations[0]
+                    else:
+                        click_coords = best_move
+                        
                 if click_coords in red_locations:
                     selection = red_locations.index(click_coords)                  
                     if red_pieces[selection] == 'knight':  # Only allow selection if it's a knight
@@ -809,10 +813,11 @@ while run:
             if turn_step > 1: 
                 print(f"Turn step: {turn_step}")
                 filtered_moves = [move for move in valid_moves if move != AI_prev_move]
-                # if AI_color == 'green': 
-                #     print("green")
-                #     best_move = agent.minimax_action(filtered_moves)
-                #     print(f"Best Move: {best_move}")
+                if AI_color == 'green': 
+                    if turn_step == 2:
+                        click_coords = green_locations[-1]
+                    else:
+                        click_coords = best_move
                     
                 if click_coords in green_locations:
                     selection = green_locations.index(click_coords)
