@@ -97,7 +97,8 @@ class MinimaxAgent(BayesianAgent):
     def __init__(self, player_color, apple_values, locations, clues_pos, my_poison_apples, player_knight_position=None):
         # self.player_knight_position = player_knight_position
         super().__init__(player_color, apple_values, locations, clues_pos, my_poison_apples, player_knight_position=None)
-    
+        self.visited_positions = set()  # Keep track of visited positions
+        
     def update_player_knight_position(self, new_position):
         self.player_knight_position = new_position
 
@@ -168,6 +169,10 @@ class MinimaxAgent(BayesianAgent):
         if self.player_knight_position:
             if action == self.player_knight_position:
                 value *= 10  # Lower the value significantly if the human player can move to this position
+
+        # Penalize revisiting positions
+        if action in self.visited_positions:
+            value -= 50  # Arbitrary penalty value
 
         return value
 
