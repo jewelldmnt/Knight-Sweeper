@@ -340,7 +340,7 @@ def draw_poisoned_apples():
                     red_piece_index = red_locations.index(click_coords)
                     red_pieces[red_piece_index] = 'poison'
                     
-                else: # this is AI player
+                elif AI_color == 'red' and click_coords in red_locations and click_coords != (0, 0) and click_coords not in red_golden_locations and click_coords not in red_poison_locations:
                     ai_poison_locations = place_random_poison_apples(
                         'red', red_locations, red_golden_locations, red_poison_locations
                     )
@@ -359,7 +359,7 @@ def draw_poisoned_apples():
                     green_piece_index = green_locations.index(click_coords)
                     green_pieces[green_piece_index] = 'poison'
                 
-                else: # this is AI player
+                elif AI_color == 'green' and click_coords in green_locations and click_coords != (7, 7) and click_coords not in green_golden_locations and click_coords not in green_poison_locations:
                     ai_poison_locations = place_random_poison_apples(
                         'green', green_locations, green_golden_locations, green_poison_locations
                     )
