@@ -308,9 +308,9 @@ def place_random_poison_apples(color, locations, golden_locations, poison_locati
     placed_locations = []
     while len(placed_locations) < 4:
         random_coords = random.choice(locations)
-        if color == 'red' and random_coords in locations and random_coords not in [(0,0), (2,1), (1,2)] and random_coords not in poison_locations and random_coords not in golden_locations:
+        if color == 'red' and random_coords in locations and random_coords not in [(0,0), (2,1), (1,2)] and random_coords not in placed_locations and random_coords not in golden_locations:
             placed_locations.append(random_coords)
-        if color == 'green' and random_coords in locations and random_coords not in [(7,7), (5,6), (6,5)] and random_coords not in poison_locations and random_coords not in golden_locations:
+        if color == 'green' and random_coords in locations and random_coords not in [(7,7), (5,6), (6,5)] and random_coords not in placed_locations and random_coords not in golden_locations:
             placed_locations.append(random_coords)
     return placed_locations
         
@@ -348,7 +348,7 @@ def draw_poisoned_apples():
                     for loc in ai_poison_locations:
                         red_piece_index = red_locations.index(loc)
                         red_pieces[red_piece_index] = 'poison'
-                        print(f'red_pieces[red_piece_index] = {red_pieces[red_piece_index]}')
+                    print(f'red poison locations: {red_poison_locations}')
                         
                 if len(red_poison_locations) == 4:
                         turn_step_putting_poison = 1
@@ -367,8 +367,8 @@ def draw_poisoned_apples():
                     for loc in ai_poison_locations:
                         green_piece_index = green_locations.index(loc)
                         green_pieces[green_piece_index] = 'poison'
-                        print(f'green_pieces[green_piece_index] = {green_pieces[green_piece_index]}')
-                    print(f'len of poison locations: {len(green_poison_locations)}')
+                    print(f'green poison locations: {green_poison_locations}')
+                    
                 if len(green_poison_locations) == 4:
                     is_putting_poison_done = True
                     can_add_values = True
@@ -488,7 +488,6 @@ def draw_captured_values():
 def draw_game_over():
     pygame.draw.rect(screen, 'black', [200, 200, 400, 70])
     screen.blit(font.render(f'{winner} won the game!', True, 'white'), (210, 210))
-    screen.blit(font.render(f'Press enter to restart!', True, 'white'), (210, 240))
     
     
 def draw_dialogue_box():
@@ -643,13 +642,13 @@ def choose_color():
                     pygame.draw.rect(screen, colors[0], card1_button)
                     pygame.display.flip()
                     pygame.time.wait(1000)  # Optional delay before returning color
-                    return 'red'
+                    return 'red' if colors[0] == 'dark red' else 'green'
                 elif card2_button.collidepoint(mouse_pos):
                     # Flip card 2 to reveal true color
                     pygame.draw.rect(screen, colors[1], card2_button)
                     pygame.display.flip()
                     pygame.time.wait(1000)  # Optional delay before returning color
-                    return 'green'
+                    return 'red' if colors[1] == 'dark red' else 'green'
 
 
 ##########################################################################
