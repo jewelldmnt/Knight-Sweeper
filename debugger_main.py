@@ -246,10 +246,6 @@ def draw_pieces():
     None
     """
     global red_images, green_images
-    if AI_color == 'red':
-        red_images = [red_knight, red_apple, red_apple, red_apple]
-    else:
-        green_images = [green_knight, green_apple, green_apple, green_apple]
     for i in range(len(red_pieces)):
         index = piece_list.index(red_pieces[i])
         x, y = red_locations[i]
@@ -340,7 +336,7 @@ def draw_poisoned_apples():
                     red_piece_index = red_locations.index(click_coords)
                     red_pieces[red_piece_index] = 'poison'
                     
-                else: # this is AI player
+                elif AI_color == 'red' and click_coords in red_locations and click_coords != (0, 0) and click_coords not in red_golden_locations and click_coords not in red_poison_locations:
                     ai_poison_locations = place_random_poison_apples(
                         'red', red_locations, red_golden_locations, red_poison_locations
                     )
@@ -348,7 +344,6 @@ def draw_poisoned_apples():
                     for loc in ai_poison_locations:
                         red_piece_index = red_locations.index(loc)
                         red_pieces[red_piece_index] = 'poison'
-                        print(f'red_pieces[red_piece_index] = {red_pieces[red_piece_index]}')
                         
                 if len(red_poison_locations) == 4:
                         turn_step_putting_poison = 1
@@ -358,8 +353,9 @@ def draw_poisoned_apples():
                     green_poison_locations.append(click_coords)
                     green_piece_index = green_locations.index(click_coords)
                     green_pieces[green_piece_index] = 'poison'
-                
-                else: # this is AI player
+                    
+                 # this is AI player
+                elif AI_color == 'green' and click_coords in green_locations and click_coords != (7, 7) and click_coords not in green_golden_locations and click_coords not in green_poison_locations:
                     ai_poison_locations = place_random_poison_apples(
                         'green', green_locations, green_golden_locations, green_poison_locations
                     )
@@ -367,7 +363,6 @@ def draw_poisoned_apples():
                     for loc in ai_poison_locations:
                         green_piece_index = green_locations.index(loc)
                         green_pieces[green_piece_index] = 'poison'
-                        print(f'green_pieces[green_piece_index] = {green_pieces[green_piece_index]}')
                     print(f'len of poison locations: {len(green_poison_locations)}')
                 if len(green_poison_locations) == 4:
                     is_putting_poison_done = True
@@ -560,13 +555,13 @@ def draw_golden_clues():
             return False
         # Check if position is in poisoned locations, golden apples locations, or horse location
         if player == 'green':
-            if pos in poisoned_locations or pos == (0, 0) or pos in green_locations or pos in red_golden_clue_pos or pos not in red_apple_values.keys():
+            if pos in poisoned_locations or pos == (0, 0) or pos in green_locations or pos in red_golden_clue_pos or pos not in red_apples_locations:
                 return False
             if pos in red_apple_values.keys():
                 if red_apple_values[pos] == 1:
                     return False
         else:
-            if pos in poisoned_locations or pos == (7, 7) or pos in red_locations or pos in green_golden_clue_pos or pos not in green_apple_values.keys():
+            if pos in poisoned_locations or pos == (7, 7) or pos in red_locations or pos in green_golden_clue_pos or pos not in green_apples_locations:
                 return False   
             if pos in green_apple_values.keys():
                 if green_apple_values[pos] == 1:
@@ -592,6 +587,8 @@ def draw_golden_clues():
         adjacent_cells = possible_adjacent_locations(green_poison_locations, 'red')
         random_clue = random.choice(adjacent_cells)
         print(f"Clue position: {random_clue}")
+        print(f'Length Red locations: {len(red_locations)}')
+        print(f'Length Red golden clues: {len(red_golden_clue_pos)}')
         red_golden_clue_pos.append(random_clue)
         if AI_color == 'red':
             agent.update_clue_probabilities(random_clue)
@@ -601,6 +598,8 @@ def draw_golden_clues():
         adjacent_cells = possible_adjacent_locations(red_poison_locations, 'green')
         random_clue = random.choice(adjacent_cells)
         print(f"Clue position: {random_clue}")
+        print(f'Length Green locations: {len(green_locations)}')
+        print(f'Length Green golden clues: {len(green_golden_clue_pos)}')
         green_golden_clue_pos.append(random_clue)
         if AI_color == 'green':
             agent.update_clue_probabilities(random_clue)
@@ -643,22 +642,23 @@ def choose_color():
                     pygame.draw.rect(screen, colors[0], card1_button)
                     pygame.display.flip()
                     pygame.time.wait(1000)  # Optional delay before returning color
-                    return 'red'
+                    return colors[0]
                 elif card2_button.collidepoint(mouse_pos):
                     # Flip card 2 to reveal true color
                     pygame.draw.rect(screen, colors[1], card2_button)
                     pygame.display.flip()
                     pygame.time.wait(1000)  # Optional delay before returning color
-                    return 'green'
+                    return colors[1]
 
 
 ##########################################################################
 # MAIN LOOP
 ##########################################################################
-human_color = choose_color()
-AI_color = 'red' if human_color == 'green' else 'green'
+# human_agent = choose_color()
+human_agent = 'dark red'
+AI_color = 'red' if human_agent == 'dark green' else 'green'
 player = 0 # 0  - human player 1 - AI agent
-AI_prev_move = (0,0) if human_color == 'green' else (7,7)
+AI_prev_move = (0,0) if human_agent == 'dark green' else (7,7)
 draw_golden_apples()
 
 # Determine initial options for each player
@@ -681,7 +681,7 @@ while run:
     if can_add_values:
         add_apple_values() 
         can_add_values = False
-        if human_color == 'dark green':
+        if human_agent == 'dark green':
             green_apple_clues_pos = [pos for pos, val in green_apple_values.items() if val == 1]
             agent = MinimaxAgent('red', green_apple_values, green_locations, green_apple_clues_pos, red_poison_locations)
             player = 1
@@ -743,11 +743,11 @@ while run:
             # Red player's turn handling
             if turn_step <= 1:  
                 print(f"Turn step: {turn_step}")
-                if AI_color == 'red': 
-                    if turn_step == 0:
-                        click_coords = red_locations[0]
-                    else:
-                        click_coords = best_move
+                # if AI_color == 'red': 
+                #     if turn_step == 0:
+                #         click_coords = red_locations[0]
+                #     else:
+                #         click_coords = best_move
                         
                 if click_coords in red_locations:
                     selection = red_locations.index(click_coords)                  
@@ -813,11 +813,11 @@ while run:
             if turn_step > 1: 
                 print(f"Turn step: {turn_step}")
                 filtered_moves = [move for move in valid_moves if move != AI_prev_move]
-                if AI_color == 'green': 
-                    if turn_step == 2:
-                        click_coords = green_locations[-1]
-                    else:
-                        click_coords = best_move
+                # if AI_color == 'green': 
+                #     if turn_step == 2:
+                #         click_coords = green_locations[-1]
+                #     else:
+                #         click_coords = best_move
                     
                 if click_coords in green_locations:
                     selection = green_locations.index(click_coords)
