@@ -95,9 +95,9 @@ class BayesianAgent:
 
 class MinimaxAgent(BayesianAgent):
     def __init__(self, player_color, apple_values, locations, clues_pos, my_poison_apples, player_knight_position=None):
-        # self.player_knight_position = player_knight_position
-        super().__init__(player_color, apple_values, locations, clues_pos, my_poison_apples, player_knight_position=None)
-    
+        super().__init__(player_color, apple_values, locations, clues_pos, my_poison_apples, player_knight_position)
+        self.visited_positions = set()  # Keep track of visited positions
+        
     def update_player_knight_position(self, new_position):
         self.player_knight_position = new_position
 
@@ -169,8 +169,11 @@ class MinimaxAgent(BayesianAgent):
             if action == self.player_knight_position:
                 value *= 10  # Lower the value significantly if the human player can move to this position
 
-        return value
+        # Penalize revisiting positions
+        if action in self.visited_positions:
+            value -= 50  # Arbitrary penalty value
 
+        return value
 
     def is_terminal(self, position):
         x, y = position
@@ -178,11 +181,11 @@ class MinimaxAgent(BayesianAgent):
 
     def get_valid_moves(self, position):
         x, y = position
-        possible_moves = [
-            (x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1),
-            (x + 1, y + 1), (x - 1, y - 1), (x + 1, y - 1), (x - 1, y + 1)
+        potential_moves = [
+            (x + 2, y + 1), (x + 1, y + 2), (x + 2, y - 1), (x + 1, y - 2),
+            (x - 2, y + 1), (x - 1, y + 2), (x - 2, y - 1), (x - 1, y - 2)
         ]
-        valid_moves = [(px, py) for px, py in possible_moves if 0 <= px < self.grid_size and 0 <= py < self.grid_size]
+        valid_moves = [(px, py) for px, py in potential_moves if 0 <= px < self.grid_size and 0 <= py < self.grid_size]
         return valid_moves
 
     
