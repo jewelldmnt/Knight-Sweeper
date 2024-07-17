@@ -246,10 +246,6 @@ def draw_pieces():
     None
     """
     global red_images, green_images
-    if AI_color == 'red':
-        red_images = [red_knight, red_apple, red_apple, red_apple]
-    else:
-        green_images = [green_knight, green_apple, green_apple, green_apple]
     for i in range(len(red_pieces)):
         index = piece_list.index(red_pieces[i])
         x, y = red_locations[i]
