@@ -105,13 +105,21 @@ class MinimaxAgent(BayesianAgent):
         best_action = None
         best_value = -float('inf')
         worst_value = float('inf')
-        
+
         if self.player_knight_position in valid_moves:
             best_value = 100000
             best_action = self.player_knight_position
             return best_action
 
         for move in valid_moves:
+            if self.player_knight_position:
+                opp_x, opp_y = self.player_knight_position
+                possible_opp_moves = [
+                    (opp_x + 2, opp_y + 1), (opp_x + 1, opp_y + 2), (opp_x + 2, opp_y - 1), (opp_x + 1, opp_y - 2),
+                    (opp_x - 2, opp_y + 1), (opp_x - 1, opp_y + 2), (opp_x - 2, opp_y - 1), (opp_x - 1, opp_y - 2)
+                ]
+                if move in possible_opp_moves:
+                    continue
             value = self.minimax(move, depth, best_value, worst_value, True)
             if value > best_value:
                 best_value = value
