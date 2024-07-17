@@ -665,7 +665,7 @@ draw_golden_apples()
 green_options = check_options(green_pieces, green_locations, 'green')
 red_options = check_options(red_pieces, red_locations, 'red')
 
-
+# Main game loop
 run = True
 while run:
     timer.tick(FPS)
@@ -803,6 +803,9 @@ while run:
                     if AI_color == 'red':
                         AI_prev_move = click_coords
                     
+                    if human_color == 'red':
+                        agent.update_player_knight_position(click_coords) # Update human player with new position
+                    
                     green_options = check_options(green_pieces, green_locations, 'green')
                     red_options = check_options(red_pieces, red_locations, 'red')
                     turn_step = 2
@@ -874,6 +877,9 @@ while run:
                     if AI_color == 'green':
                         AI_prev_move = click_coords
                             
+                    if human_color == 'green':
+                        agent.update_player_knight_position(click_coords)  # Update human player with new position
+
                     green_options = check_options(green_pieces, green_locations, 'green')
                     red_options = check_options(red_pieces, red_locations, 'red')
                     turn_step = 0
