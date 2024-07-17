@@ -682,7 +682,7 @@ while run:
     if can_add_values:
         add_apple_values() 
         can_add_values = False
-        if human_color == 'dark green':
+        if human_color == 'green':
             green_apple_clues_pos = [pos for pos, val in green_apple_values.items() if val == 1]
             agent = MinimaxAgent('red', green_apple_values, green_locations, green_apple_clues_pos, red_poison_locations)
             player = 1
@@ -743,7 +743,7 @@ while run:
             
             # Red player's turn handling
             if turn_step <= 1:  
-                print(f"Turn step: {turn_step}")
+                # print(f"Turn step: {turn_step}")
                 if AI_color == 'red': 
                     if turn_step == 0:
                         click_coords = red_locations[0]
@@ -783,11 +783,12 @@ while run:
                         
                         if green_pieces[green_piece_idx] == 'golden':
                             is_golden_eaten = True
-
+                        if green_pieces[green_piece_idx] != 'knight':
+                            green_apple_values.pop(click_coords)
                         green_pieces.pop(green_piece_idx)
                         green_locations.pop(green_piece_idx)
-                        green_apple_values.pop(click_coords)
 
+                            
                     elif click_coords in red_locations:
                         red_piece_idx = red_locations.index(click_coords)
                         extra_red_apple = {red_piece_idx: click_coords}
@@ -815,7 +816,7 @@ while run:
             
             # Green player's turn handling
             if turn_step > 1: 
-                print(f"Turn step: {turn_step}")
+                #print(f"Turn step: {turn_step}")
                 filtered_moves = [move for move in valid_moves if move != AI_prev_move]
                 if AI_color == 'green': 
                     if turn_step == 2:
@@ -856,10 +857,11 @@ while run:
                                                 
                         if red_pieces[red_piece_idx] == 'golden':
                             is_golden_eaten = True
-                        
+                        if red_pieces[red_piece_idx] != 'knight':
+                            red_apple_values.pop(click_coords)     
+                       
                         red_pieces.pop(red_piece_idx)
-                        red_locations.pop(red_piece_idx)         
-                        red_apple_values.pop(click_coords)             
+                        red_locations.pop(red_piece_idx)  
                         
                     elif click_coords in green_locations:
                         green_piece_idx = green_locations.index(click_coords)

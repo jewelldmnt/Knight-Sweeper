@@ -100,12 +100,16 @@ class MinimaxAgent(BayesianAgent):
     
     def update_player_knight_position(self, new_position):
         self.player_knight_position = new_position
-        print(f"Player Knight Position: {self.player_knight_position}")
 
     def minimax_action(self, valid_moves, depth=3):
         best_action = None
         best_value = -float('inf')
         worst_value = float('inf')
+        
+        if self.player_knight_position in valid_moves:
+            best_value = 100000
+            best_action = self.player_knight_position
+            return best_action
 
         for move in valid_moves:
             value = self.minimax(move, depth, best_value, worst_value, True)
@@ -147,24 +151,15 @@ class MinimaxAgent(BayesianAgent):
 
         # Adjust value based on the side of the board
         # Green player's side is columns 4-7, Red player's side is columns 0-3
-        if (self.player_color == 'green' and x >= 4) or (self.player_color == 'red' and x < 4):
+        if (x, y) not in self.apple_values:
             apple_value *= 0.0  # Lower priority for own side apples
-
-        # Further lower the value for apples with a probability greater than 0
-        if probability > 0:
-            apple_value *= 0.1  # Assign lowest priority
 
         value = apple_value - probability * 100  # Weigh poison heavily
 
         # Check if the human player can jump to this position
         if self.player_knight_position:
-            opp_x, opp_y = self.player_knight_position
-            possible_opp_moves = [
-                (opp_x + 2, opp_y + 1), (opp_x + 1, opp_y + 2), (opp_x + 2, opp_y - 1), (opp_x + 1, opp_y - 2),
-                (opp_x - 2, opp_y + 1), (opp_x - 1, opp_y + 2), (opp_x - 2, opp_y - 1), (opp_x - 1, opp_y - 2)
-            ]
-            if (x, y) in possible_opp_moves:
-                value *= 0.1  # Lower the value significantly if the human player can move to this position
+            if action == self.player_knight_position:
+                value *= 10  # Lower the value significantly if the human player can move to this position
 
         return value
 
