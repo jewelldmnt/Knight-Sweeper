@@ -228,12 +228,12 @@ def draw_board():
     # Loop through red golden clue positions and draw blue highlight
     for pos in red_golden_clue_pos:
         x, y = pos
-        pygame.draw.rect(screen, 'dark gray', (x * 75 + 1, y * 75 + 1, 98, 98))
+        pygame.draw.rect(screen, 'dark gray', (x * 75 + 1, y * 75 + 1, 74, 74))
     
     # Loop through green golden clue positions and draw blue highlight
     for pos in green_golden_clue_pos:
         x, y = pos
-        pygame.draw.rect(screen, 'dark gray', (x * 75 + 1, y * 75 + 1, 98, 98))
+        pygame.draw.rect(screen, 'dark gray', (x * 75 + 1, y * 75 + 1, 74, 74))
         
 def draw_pieces():
     """
