@@ -485,9 +485,10 @@ def draw_captured_values():
         y_offset += 60
 
 
-def draw_game_over():
+def draw_game_over(text=None):
     pygame.draw.rect(screen, 'black', [200, 200, 400, 70])
     screen.blit(font.render(f'{winner} won the game!', True, 'white'), (210, 210))
+    screen.blit(font.render(f'{text}', True, 'white'), (210, 240))
     
     
 def draw_dialogue_box():
@@ -665,7 +666,8 @@ draw_golden_apples()
 # Determine initial options for each player
 green_options = check_options(green_pieces, green_locations, 'green')
 red_options = check_options(red_pieces, red_locations, 'red')
-
+game_over_text = ''
+loser = None
 # Main game loop
 run = True
 while run:
@@ -723,12 +725,14 @@ while run:
             
         else:
             if turn_step in (2, 3) and len(red_locations) < 30:
+                loser = 'Red'
                 winner = 'Green'
-                print("no moves left for red")
+                game_over_text = 'No moves left for Red'
 
             elif turn_step in (0, 1) and len(green_locations) < 30:
                 winner = 'Red'
-                print("no moves left for green")
+                loser = 'Green'
+                game_over_text = 'No moves left for Green'
             is_game_over = True
         
     # event handling
@@ -777,6 +781,8 @@ while run:
                         if green_pieces[green_piece_idx] == 'poison':
                             if count_red_shield == 0:
                                 winner = "Green"
+                                loser = 'Red'
+                                game_over_text = "Red stepped on the poison"
                                 is_game_over = True
                             else:
                                 count_red_shield -= 1
@@ -793,6 +799,7 @@ while run:
                         red_piece_idx = red_locations.index(click_coords)
                         extra_red_apple = {red_piece_idx: click_coords}
                         if red_pieces[red_piece_idx] == 'poison':
+                            game_over_text = "Red stepped on the poison"
                             winner = 'Green'
                             is_game_over = True
                         red_pieces.pop(red_piece_idx)
@@ -851,6 +858,7 @@ while run:
                         if red_pieces[red_piece_idx] == 'poison':
                             if count_green_shield == 0:
                                 winner = "Red"
+                                game_over_text = "Green stepped on the poison"
                                 is_game_over = True
                             else:
                                 count_green_shield -= 1
@@ -867,6 +875,7 @@ while run:
                         green_piece_idx = green_locations.index(click_coords)
                         extra_green_apple = {green_piece_idx: click_coords}
                         if green_pieces[green_piece_idx] == 'poison':
+                            game_over_text = "Green stepped on the poison"
                             winner = 'Red'
                             is_game_over = True
                         green_pieces.pop(green_piece_idx)
@@ -906,7 +915,7 @@ while run:
             else:
                 winner = 'Red'
         round_counter = 1
-        draw_game_over()
+        draw_game_over(game_over_text)
         
     pygame.display.flip()
 pygame.quit()
