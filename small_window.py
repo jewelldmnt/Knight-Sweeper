@@ -245,6 +245,11 @@ def draw_pieces():
     Returns:
     None
     """
+    global red_images, green_images
+    if AI_color == 'red':
+        red_images = [red_knight, red_apple, red_apple, red_apple]
+    else:
+        green_images = [green_knight, green_apple, green_apple, green_apple]
     for i in range(len(red_pieces)):
         index = piece_list.index(red_pieces[i])
         x, y = red_locations[i]
@@ -297,6 +302,17 @@ def draw_golden_apples():
         green_golden_index = green_locations.index(green_golden_locations[i])
         green_pieces[green_golden_index] = 'golden'
 
+
+def place_random_poison_apples(color, locations, golden_locations, poison_locations):
+    """Place 4 random poison apples for AI."""
+    placed_locations = []
+    while len(placed_locations) < 4:
+        random_coords = random.choice(locations)
+        if color == 'red' and random_coords in locations and random_coords not in [(0,0), (2,1), (1,2)] and random_coords not in poison_locations and random_coords not in golden_locations:
+            placed_locations.append(random_coords)
+        if color == 'green' and random_coords in locations and random_coords not in [(7,7), (5,6), (6,5)] and random_coords not in poison_locations and random_coords not in golden_locations:
+            placed_locations.append(random_coords)
+    return placed_locations
         
 
 def draw_poisoned_apples():
@@ -313,29 +329,50 @@ def draw_poisoned_apples():
     
     for event in pygame.event.get():
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            x_coord = event.pos[0] // 85
-            y_coord = event.pos[1] // 85
+            x_coord = event.pos[0] // 78
+            y_coord = event.pos[1] // 78
             click_coords = (x_coord, y_coord)
-        
             # red to put poison
-            if turn_step_putting_poison == 0 and click_coords in red_locations and click_coords != (0, 0) and click_coords not in red_golden_locations and click_coords not in red_poison_locations:
-                red_poison_locations.append(click_coords)
-                red_piece_index = red_locations.index(click_coords)
-                red_pieces[red_piece_index] = 'poison'
-                
-                if len(red_poison_locations) == 4:
-                    turn_step_putting_poison = 1
+            if turn_step_putting_poison == 0:
+                # red human player to put poison
+                if AI_color == 'green' and click_coords in red_locations and click_coords != (0, 0) and click_coords not in red_golden_locations and click_coords not in red_poison_locations:
+                    red_poison_locations.append(click_coords)
+                    red_piece_index = red_locations.index(click_coords)
+                    red_pieces[red_piece_index] = 'poison'
                     
-            elif turn_step_putting_poison == 1 and click_coords in green_locations and click_coords != (7, 7) and click_coords not in green_golden_locations and click_coords not in green_poison_locations:
-                green_poison_locations.append(click_coords)
-                green_piece_index = green_locations.index(click_coords)
-                green_pieces[green_piece_index] = 'poison'
+                else: # this is AI player
+                    ai_poison_locations = place_random_poison_apples(
+                        'red', red_locations, red_golden_locations, red_poison_locations
+                    )
+                    red_poison_locations.extend(ai_poison_locations)
+                    for loc in ai_poison_locations:
+                        red_piece_index = red_locations.index(loc)
+                        red_pieces[red_piece_index] = 'poison'
+                        print(f'red_pieces[red_piece_index] = {red_pieces[red_piece_index]}')
+                        
+                if len(red_poison_locations) == 4:
+                        turn_step_putting_poison = 1
+            
+            elif turn_step_putting_poison == 1:
+                if AI_color == 'red' and click_coords in green_locations and click_coords != (7, 7) and click_coords not in green_golden_locations and click_coords not in green_poison_locations:
+                    green_poison_locations.append(click_coords)
+                    green_piece_index = green_locations.index(click_coords)
+                    green_pieces[green_piece_index] = 'poison'
                 
+                else: # this is AI player
+                    ai_poison_locations = place_random_poison_apples(
+                        'green', green_locations, green_golden_locations, green_poison_locations
+                    )
+                    green_poison_locations.extend(ai_poison_locations)
+                    for loc in ai_poison_locations:
+                        green_piece_index = green_locations.index(loc)
+                        green_pieces[green_piece_index] = 'poison'
+                        print(f'green_pieces[green_piece_index] = {green_pieces[green_piece_index]}')
+                    print(f'len of poison locations: {len(green_poison_locations)}')
                 if len(green_poison_locations) == 4:
                     is_putting_poison_done = True
                     can_add_values = True
-
-
+                
 
 # check valid knight moves
 def check_knight(position, color):
@@ -422,7 +459,7 @@ def draw_valid(moves):
     """
     color = 'blue'
     for i in range(len(moves)):
-        pygame.draw.circle(screen, color, (moves[i][0] * 75 + 50, moves[i][1] * 75 + 50), 5)
+        pygame.draw.circle(screen, color, (moves[i][0] * 75 + 40, moves[i][1] * 75 + 40), 3)
     
 # draw captured values on the side
 def draw_captured_values():
@@ -515,21 +552,21 @@ def draw_golden_clues():
     None
     """
     global screen, red_poison_locations, green_poison_locations, red_apple_values, green_apple_values
-    
+
     def is_valid_position(pos, poisoned_locations, player):
         x, y = pos
         # Check if position is out of bounds (negative positions)
         if x < 0 or y < 0 or x > 7 or y > 7:
             return False
         # Check if position is in poisoned locations, golden apples locations, or horse location
-        if player == 'red':
-            if pos in poisoned_locations or pos == (0, 0) or pos in green_locations:
+        if player == 'green':
+            if pos in poisoned_locations or pos == (0, 0) or pos in green_locations or pos in red_golden_clue_pos or pos not in red_apple_values.keys():
                 return False
             if pos in red_apple_values.keys():
                 if red_apple_values[pos] == 1:
                     return False
         else:
-            if pos in poisoned_locations or pos == (7, 7) or pos in red_locations:
+            if pos in poisoned_locations or pos == (7, 7) or pos in red_locations or pos in green_golden_clue_pos or pos not in green_apple_values.keys():
                 return False   
             if pos in green_apple_values.keys():
                 if green_apple_values[pos] == 1:
@@ -546,27 +583,27 @@ def draw_golden_clues():
             for pos in adjacent_positions:
                 if is_valid_position(pos, poisoned_locations, player):
                     adj_cells_for_loc.append(pos)
-            adj_cells_for_loc.sort(key=lambda cell: len([c for c in adjacent_positions if is_valid_position(c, poisoned_locations, player)]))
-            adjacent_cells.append(adj_cells_for_loc)
-        
-        for cell in adjacent_cells[0]:
-            if cell in adjacent_cells[1]:
-                adjacent_cells[1].remove(cell)
-                
-        return list(set(adjacent_cells[0] + adjacent_cells[1]))
+            adjacent_cells += adj_cells_for_loc
+                            
+        return list(set(adjacent_cells))
     
-    if turn_step in (0,1):
+    if turn_step in (2,3): # red to move
         # Get adjacent cells for red poisoned apples
-        red_poisoned_adjacent_cells = possible_adjacent_locations(red_poison_locations, 'red')
-        random_clue = random.choice(red_poisoned_adjacent_cells)
+        adjacent_cells = possible_adjacent_locations(green_poison_locations, 'red')
+        random_clue = random.choice(adjacent_cells)
+        print(f"Clue position: {random_clue}")
         red_golden_clue_pos.append(random_clue)
-        agent.update_clue_probabilities(random_clue)
-    else:
+        if AI_color == 'red':
+            agent.update_clue_probabilities(random_clue)
+            
+    else: # green to move
         # Get adjacent cells for green poisoned apples
-        green_poisoned_adjacent_cells = possible_adjacent_locations(green_poison_locations, 'green')
-        random_clue = random.choice(green_poisoned_adjacent_cells)
+        adjacent_cells = possible_adjacent_locations(red_poison_locations, 'green')
+        random_clue = random.choice(adjacent_cells)
+        print(f"Clue position: {random_clue}")
         green_golden_clue_pos.append(random_clue)
-        agent.update_clue_probabilities(random_clue)
+        if AI_color == 'green':
+            agent.update_clue_probabilities(random_clue)
     
 def choose_color():
     """
@@ -606,29 +643,31 @@ def choose_color():
                     pygame.draw.rect(screen, colors[0], card1_button)
                     pygame.display.flip()
                     pygame.time.wait(1000)  # Optional delay before returning color
-                    return colors[0]
+                    return 'red'
                 elif card2_button.collidepoint(mouse_pos):
                     # Flip card 2 to reveal true color
                     pygame.draw.rect(screen, colors[1], card2_button)
                     pygame.display.flip()
                     pygame.time.wait(1000)  # Optional delay before returning color
-                    return colors[1]
+                    return 'green'
 
 
 ##########################################################################
 # MAIN LOOP
 ##########################################################################
-human_agent = 'dark red'
-AI_color = 'red' if human_agent == 'dark green' else 'green'
+human_color = choose_color()
+print(f"Human color is: {human_color}")
+AI_color = 'red' if human_color == 'green' else 'green'
+print(f'AI color is: {AI_color}')
 player = 0 # 0  - human player 1 - AI agent
-AI_prev_move = (0,0) if human_agent == 'dark green' else (7,7)
+AI_prev_move = (0,0) if human_color == 'green' else (7,7)
 draw_golden_apples()
 
 # Determine initial options for each player
 green_options = check_options(green_pieces, green_locations, 'green')
 red_options = check_options(red_pieces, red_locations, 'red')
 
-
+# Main game loop
 run = True
 while run:
     timer.tick(FPS)
@@ -644,7 +683,7 @@ while run:
     if can_add_values:
         add_apple_values() 
         can_add_values = False
-        if human_agent == 'dark green':
+        if human_color == 'dark green':
             green_apple_clues_pos = [pos for pos, val in green_apple_values.items() if val == 1]
             agent = MinimaxAgent('red', green_apple_values, green_locations, green_apple_clues_pos, red_poison_locations)
             player = 1
@@ -674,11 +713,14 @@ while run:
         valid_moves = check_valid_moves()
         if len(valid_moves) > 0:
             draw_valid(valid_moves)
-            if turn_step > 1:
+            if AI_color == 'green' and turn_step > 1:
                 filtered_moves = [move for move in valid_moves if move != AI_prev_move]
-                print("green")
                 best_move = agent.minimax_action(filtered_moves)
-                print(f"Best Move: {best_move}")
+                # print(f"Best Move: {best_move}")
+            else:
+                filtered_moves = [move for move in valid_moves if move != AI_prev_move]
+                best_move = agent.minimax_action(filtered_moves)
+                # print(f"Best Move: {best_move}")
             
         else:
             if turn_step in (2, 3) and len(red_locations) < 30:
@@ -696,17 +738,19 @@ while run:
             run = False
         
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not is_game_over:
-            x_coord = event.pos[0] // 100
-            y_coord = event.pos[1] // 100
+            x_coord = event.pos[0] // 78
+            y_coord = event.pos[1] // 78
             click_coords = (x_coord, y_coord)
             
             # Red player's turn handling
             if turn_step <= 1:  
-                # filtered_moves = [move for move in valid_moves if move != AI_prev_move]
-                # if AI_color == 'red':
-                #     click_coords = agent.minimax_action(filtered_moves)
-                #     print(f"Clicked coords: {click_coords}")
-                
+                print(f"Turn step: {turn_step}")
+                if AI_color == 'red': 
+                    if turn_step == 0:
+                        click_coords = red_locations[0]
+                    else:
+                        click_coords = best_move
+                        
                 if click_coords in red_locations:
                     selection = red_locations.index(click_coords)                  
                     if red_pieces[selection] == 'knight':  # Only allow selection if it's a knight
@@ -743,6 +787,7 @@ while run:
 
                         green_pieces.pop(green_piece_idx)
                         green_locations.pop(green_piece_idx)
+                        green_apple_values.pop(click_coords)
 
                     elif click_coords in red_locations:
                         red_piece_idx = red_locations.index(click_coords)
@@ -760,6 +805,9 @@ while run:
                     if AI_color == 'red':
                         AI_prev_move = click_coords
                     
+                    if human_color == 'red':
+                        agent.update_player_knight_position(click_coords) # Update human player with new position
+                    
                     green_options = check_options(green_pieces, green_locations, 'green')
                     red_options = check_options(red_pieces, red_locations, 'red')
                     turn_step = 2
@@ -768,11 +816,13 @@ while run:
             
             # Green player's turn handling
             if turn_step > 1: 
+                print(f"Turn step: {turn_step}")
                 filtered_moves = [move for move in valid_moves if move != AI_prev_move]
-                # if AI_color == 'green': 
-                #     print("green")
-                #     best_move = agent.minimax_action(filtered_moves)
-                #     print(f"Best Move: {best_move}")
+                if AI_color == 'green': 
+                    if turn_step == 2:
+                        click_coords = green_locations[-1]
+                    else:
+                        click_coords = best_move
                     
                 if click_coords in green_locations:
                     selection = green_locations.index(click_coords)
@@ -809,7 +859,8 @@ while run:
                             is_golden_eaten = True
                         
                         red_pieces.pop(red_piece_idx)
-                        red_locations.pop(red_piece_idx)                      
+                        red_locations.pop(red_piece_idx)         
+                        red_apple_values.pop(click_coords)             
                         
                     elif click_coords in green_locations:
                         green_piece_idx = green_locations.index(click_coords)
@@ -828,6 +879,9 @@ while run:
                     if AI_color == 'green':
                         AI_prev_move = click_coords
                             
+                    if human_color == 'green':
+                        agent.update_player_knight_position(click_coords)  # Update human player with new position
+
                     green_options = check_options(green_pieces, green_locations, 'green')
                     red_options = check_options(red_pieces, red_locations, 'red')
                     turn_step = 0
