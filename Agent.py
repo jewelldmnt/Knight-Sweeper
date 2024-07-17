@@ -48,10 +48,10 @@ class BayesianAgent:
             i, j = cell
             self.probabilities[j][i] += probability
                     
-        # print(f"Possible poison location: {possible_poison}")
-        # print("Probabilities")
+        print(f"Possible poison location: {possible_poison}")
+        print("Probabilities")
         df = pd.DataFrame(self.probabilities)
-        # print(df)
+        print(df)
 
     
     def update_probability(self, revealed_apple_location):
@@ -148,7 +148,7 @@ class MinimaxAgent(BayesianAgent):
         # Adjust value based on the side of the board
         # Green player's side is columns 4-7, Red player's side is columns 0-3
         if (self.player_color == 'green' and x >= 4) or (self.player_color == 'red' and x < 4):
-            apple_value *= 0.5  # Lower priority for own side apples
+            apple_value *= 0.0  # Lower priority for own side apples
 
         # Further lower the value for apples with a probability greater than 0
         if probability > 0:
