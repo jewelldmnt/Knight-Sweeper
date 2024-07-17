@@ -158,6 +158,16 @@ class MinimaxAgent(BayesianAgent):
 
         # Check if the human player can jump to this position
         if self.player_knight_position:
+            opp_x, opp_y = self.player_knight_position
+            possible_opp_moves = [
+                (opp_x + 2, opp_y + 1), (opp_x + 1, opp_y + 2), (opp_x + 2, opp_y - 1), (opp_x + 1, opp_y - 2),
+                (opp_x - 2, opp_y + 1), (opp_x - 1, opp_y + 2), (opp_x - 2, opp_y - 1), (opp_x - 1, opp_y - 2)
+            ]
+            if (x, y) in possible_opp_moves:
+                value *= 0.1  # Lower the value significantly if the human player can move to this position
+
+        # Check if the human player can jump to this position
+        if self.player_knight_position:
             if action == self.player_knight_position:
                 value *= 10  # Lower the value significantly if the human player can move to this position
 
