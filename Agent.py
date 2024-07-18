@@ -120,13 +120,19 @@ class MinimaxAgent(BayesianAgent):
                 ]
                 if move in possible_opp_moves:
                     continue
+            if self.moves_to_sure_not_poison(move):
+                continue
             value = self.minimax(move, depth, best_value, worst_value, True)
             if value > best_value:
                 best_value = value
                 best_action = move
                 
         return best_action
-    
+
+    def moves_to_sure_not_poison(self, move):
+        x, y = move
+        return self.probabilities[y][x] >= 0.5  # Check if the move leads to a certain poison position
+
     def minimax(self, position, depth, alpha, beta, is_maximizing):
         if depth == 0 or self.is_terminal(position):
             return self.calculate_value(position)
@@ -163,11 +169,6 @@ class MinimaxAgent(BayesianAgent):
             apple_value *= 0.0  # Lower priority for own side apples
 
         value = apple_value - probability * 100  # Weigh poison heavily
-
-        # Check if the human player can jump to this position
-        if self.player_knight_position:
-            if action == self.player_knight_position:
-                value *= 10  # Lower the value significantly if the human player can move to this position
 
         # Penalize revisiting positions
         if action in self.visited_positions:
