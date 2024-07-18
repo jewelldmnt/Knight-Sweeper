@@ -804,13 +804,12 @@ while run:
                             is_game_over = True
                         red_pieces.pop(red_piece_idx)
                         red_locations.pop(red_piece_idx)
-                    
+                    if AI_color == 'red':
+                        AI_prev_move = red_locations[0]
                     red_locations[0] = click_coords
                     red_pieces[0] = 'knight'
                     agent.update_probability(click_coords)
                     agent.draw_possible_poison_locations(num_of_poisons)
-                    if AI_color == 'red':
-                        AI_prev_move = click_coords
                     
                     if human_color == 'red':
                         agent.update_player_knight_position(click_coords) # Update human player with new position
@@ -881,14 +880,15 @@ while run:
                         green_pieces.pop(green_piece_idx)
                         green_locations.pop(green_piece_idx)
                         
+                    if AI_color == 'green':
+                        AI_prev_move = green_locations[-1]
+                        print(f'prev move is: {AI_prev_move}')
                     round_counter += 1
                     green_locations[-1] = click_coords
                     green_pieces[-1] = 'knight'
                     agent.update_probability(click_coords)
                     agent.draw_possible_poison_locations(num_of_poisons)
-                    if AI_color == 'green':
-                        AI_prev_move = click_coords
-                            
+
                     if human_color == 'green':
                         agent.update_player_knight_position(click_coords)  # Update human player with new position
 
