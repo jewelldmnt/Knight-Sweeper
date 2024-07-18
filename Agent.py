@@ -123,7 +123,11 @@ class MinimaxAgent(BayesianAgent):
             if self.moves_to_sure_not_poison(move):
                 continue
             value = self.minimax(move, depth, best_value, worst_value, True)
-            if value > best_value:
+            current_val = self.calculate_value(move)
+            if value > best_value and current_val >= best_value:
+                best_value = value
+                best_action = move
+            elif value > best_value:
                 best_value = value
                 best_action = move
                 
@@ -131,7 +135,7 @@ class MinimaxAgent(BayesianAgent):
 
     def moves_to_sure_not_poison(self, move):
         x, y = move
-        return self.probabilities[y][x] >= 0.5  # Check if the move leads to a certain poison position
+        return self.probabilities[y][x] >= 0.4  # Check if the move leads to a certain poison position
 
     def minimax(self, position, depth, alpha, beta, is_maximizing):
         if depth == 0 or self.is_terminal(position):
